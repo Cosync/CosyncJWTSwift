@@ -28,7 +28,6 @@ public enum CosyncJWTError: Error {
     case invalidData                    // 602
     case emailDoesNotExist              // 603
     case invalidMetaData                // 604
-    
     case invalidPassword
     
     public var message: String {
