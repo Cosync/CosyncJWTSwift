@@ -68,7 +68,7 @@ The *login()* function is used to login into a user's account. If the login is s
 
 **password** : String - this contains the user's password.
 
-**onCompletion**: Function - this is call upon completion of the login
+**onCompletion**: Function - this is called upon completion of the login
 
 ### Example
 
