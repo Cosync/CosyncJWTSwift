@@ -2,6 +2,23 @@
 //  RESTManager.swift
 //  CosyncJWTiOS
 //
+//  Licensed to the Apache Software Foundation (ASF) under one
+//  or more contributor license agreements.  See the NOTICE file
+//  distributed with this work for additional information
+//  regarding copyright ownership.  The ASF licenses this file
+//  to you under the Apache License, Version 2.0 (the
+//  "License"); you may not use this file except in compliance
+//  with the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing,
+//  software distributed under the License is distributed on an
+//  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+//  KIND, either express or implied.  See the License for the
+//  specific language governing permissions and limitations
+//  under the License.
+//
 //  Created by Richard Krueger on 8/6/20.
 //  Copyright © 2020 cosync. All rights reserved.
 //
@@ -38,15 +55,22 @@ public class CosyncJWTRest {
     // Login credentials
     public var jwt: String?
     public var accessToken: String?
-    
+    public var loginToken: String?
+
     // complete signup credentials
     public var signedUserToken: String?
     
-    // Logged in user information
-    public var handle: String?
-    public var metaData: [String:Any]?
-    public var lastLogin: Date?
-    
+    // Logged in user data
+    public var status: String?                      // 'active', or 'suspend'
+    public var handle: String?                      // user email or phone
+    public var twoFactorPhoneVerification: Bool?    // user 2-factor phone verification enabled
+    public var twoFactorGoogleVerification: Bool?   // user 2-factor google verification enabled
+    public var appId: String?                       // CosyncJWT app id
+    public var phone: String?                       // user phone number (E 164 format)
+    public var phoneVerified: Bool?                 // true if phone number is verified
+    public var metaData: [String:Any]?              // user metadata
+    public var lastLogin: Date?                     // last login date in UTC
+
     // application data
     public var appName: String?
     public var twoFactorVerification: String?
@@ -60,11 +84,13 @@ public class CosyncJWTRest {
     var appData: [String:Any]?
     
     static let loginPath = "api/appuser/login"
+    static let loginCompletePath = "api/appuser/loginComplete"
     static let signupPath = "api/appuser/signup"
     static let completeSignupPath = "api/appuser/completeSignup"
     static let getUserPath = "api/appuser/getUser"
     static let setPhonePath = "api/appuser/setPhone"
     static let verifyPhonePath = "api/appuser/verifyPhone"
+    static let setTwoFactorPhoneVerificationPath = "/api/appuser/setTwoFactorPhoneVerification"
     static let forgotPasswordPath = "api/appuser/forgotPassword"
     static let resetPasswordPath = "api/appuser/resetPassword"
     static let changePasswordPath = "api/appuser/changePassword"
@@ -88,6 +114,10 @@ public class CosyncJWTRest {
     // Login into CosyncJWT
     public func login(_ handle: String, password: String, onCompletion completion: @escaping (Error?) -> Void) {
         
+        self.jwt = nil
+        self.accessToken = nil
+        self.loginToken = nil
+
         if  let appToken = self.appToken,
             let cosyncRestAddress = self.cosyncRestAddress {
             
@@ -112,6 +142,90 @@ public class CosyncJWTRest {
                     var requestBodyComponents = URLComponents()
                     requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
                                                         URLQueryItem(name: "password", value: password.md5())]
+                    
+                    urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+
+                    let task = session.dataTask(with: urlRequest) { data, response, error in
+                    
+                        // ensure there is no error for this HTTP response
+                        let errorResponse = CosyncJWTError.checkResponse(data: data, response: response, error: error)
+                        guard errorResponse == nil  else {
+                            completion(errorResponse)
+                            return
+                        }
+
+                        // ensure there is data returned from this HTTP response
+                        guard let content = data else {
+                            completion(CosyncJWTError.internalServerError)
+                            return
+                        }
+                        
+                        // serialise the data / NSData object into Dictionary [String : Any]
+                        guard let json = (try? JSONSerialization.jsonObject(with: content, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                            completion(CosyncJWTError.internalServerError)
+                            return
+                        }
+                        
+                        if let jwt = json["jwt"] as? String,
+                           let accessToken = json["access-token"] as? String {
+                            
+                            self.jwt = jwt
+                            self.accessToken = accessToken
+
+                            completion(nil)
+                        } else if let loginToken = json["login-token"] as? String {
+                            
+                            self.loginToken = loginToken
+                            completion(nil)
+                            
+                        } else {
+                            completion(CosyncJWTError.internalServerError)
+                        }
+                    }
+                    
+                    // execute the HTTP request
+                    task.resume()
+                }
+            })
+
+        } else {
+            completion(CosyncJWTError.cosyncJWTConfiguration)
+        }
+        
+        
+    }
+    
+    // Login Complete into CosyncJWT
+    public func loginComplete(_ code: String, onCompletion completion: @escaping (Error?) -> Void) {
+        
+        self.jwt = nil
+        self.accessToken = nil
+
+        if  let appToken = self.appToken,
+            let cosyncRestAddress = self.cosyncRestAddress,
+            let loginToken = self.loginToken {
+            
+            CosyncJWTRest.shared.getApplication(onCompletion: { (err) in
+                
+                if let error = err {
+                    completion(error)
+                } else {
+                    let restPath = cosyncRestAddress
+                    let appToken = appToken
+                    
+                    let config = URLSessionConfiguration.default
+
+                    let session = URLSession(configuration: config)
+                    
+                    let url = URL(string: "\(restPath)/\(CosyncJWTRest.loginCompletePath)")!
+                    var urlRequest = URLRequest(url: url)
+                    urlRequest.httpMethod = "POST"
+                    urlRequest.allHTTPHeaderFields = ["app-token": appToken]
+
+                    // your post request data
+                    var requestBodyComponents = URLComponents()
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "loginToken", value: loginToken),
+                                                        URLQueryItem(name: "code", value: code)]
                     
                     urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
 
@@ -422,6 +536,25 @@ public class CosyncJWTRest {
                         self.handle = handle
                     }
                     
+                    if let twoFactorPhoneVerification = json["twoFactorPhoneVerification"] as? Bool {
+                        self.twoFactorPhoneVerification = twoFactorPhoneVerification
+                    }
+
+                    if let twoFactorGoogleVerification = json["twoFactorGoogleVerification"] as? Bool {
+                        self.twoFactorGoogleVerification = twoFactorGoogleVerification
+                    }
+                    
+                    if let appId = json["appId"] as? String {
+                        self.appId = appId
+                    }
+                    
+                    if let phone = json["phone"] as? String {
+                        self.phone = phone
+                    }
+                    
+                    if let phoneVerified = json["phoneVerified"] as? Bool {
+                        self.phoneVerified = phoneVerified
+                    }
                     
                     if let metaData = json["metaData"] as? [String: Any] {
                         self.metaData = metaData
@@ -467,7 +600,6 @@ public class CosyncJWTRest {
                 
                 let config = URLSessionConfiguration.default
                 config.httpAdditionalHeaders = ["access-token": accessToken]
-                NSLog("access token '\(accessToken)'")
 
                 let session = URLSession(configuration: config)
                 
@@ -503,12 +635,11 @@ public class CosyncJWTRest {
                     let str = String(decoding: content, as: UTF8.self)
                     
                     if str == "true" {
+                        self.phone = phoneNumber
                         completion(nil)
                     } else {
                         completion(CosyncJWTError.internalServerError)
                     }
-                    
-                    completion(nil)
 
                 }
                 
@@ -536,7 +667,6 @@ public class CosyncJWTRest {
                 
                 let config = URLSessionConfiguration.default
                 config.httpAdditionalHeaders = ["access-token": accessToken]
-                NSLog("access token '\(accessToken)'")
 
                 let session = URLSession(configuration: config)
                 
@@ -572,12 +702,76 @@ public class CosyncJWTRest {
                     let str = String(decoding: content, as: UTF8.self)
                     
                     if str == "true" {
+                        self.phoneVerified = true
                         completion(nil)
                     } else {
                         completion(CosyncJWTError.internalServerError)
                     }
+
+                }
+                
+                // execute the HTTP request
+                task.resume()
+                
+            } else {
+                completion(CosyncJWTError.internalServerError)
+            }
+        } else {
+            completion(CosyncJWTError.cosyncJWTConfiguration)
+        }
+        
+ 
+    }
+    
+    // Set the phone number for the current user from CosyncJWT
+    public func setTwoFactorPhoneVerification(_ twoFactor: Bool, onCompletion completion: @escaping (Error?) -> Void) {
+        
+        if  let cosyncRestAddress = self.cosyncRestAddress {
+            
+            let restPath = cosyncRestAddress
+            if let accessToken = self.accessToken {
+                
+                let config = URLSessionConfiguration.default
+                config.httpAdditionalHeaders = ["access-token": accessToken]
+
+                let session = URLSession(configuration: config)
+                
+                let url = URL(string: "\(restPath)/\(CosyncJWTRest.setTwoFactorPhoneVerificationPath)")!
+                var urlRequest = URLRequest(url: url)
+                
+                urlRequest.httpMethod = "POST"
+                urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+                // your post request data
+                var requestBodyComponents = URLComponents()
+                
+                requestBodyComponents.queryItems = [URLQueryItem(name: "twoFactor", value: twoFactor ? "true" : "false")]
+
+                urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+
+                
+                let task = session.dataTask(with: urlRequest) { data, response, error in
+                
+                    // ensure there is no error for this HTTP response
+                    let errorResponse = CosyncJWTError.checkResponse(data: data, response: response, error: error)
+                    guard errorResponse == nil  else {
+                        completion(errorResponse)
+                        return
+                    }
+
+                    // ensure there is data returned from this HTTP response
+                    guard let content = data else {
+                        completion(CosyncJWTError.internalServerError)
+                        return
+                    }
                     
-                    completion(nil)
+                    let str = String(decoding: content, as: UTF8.self)
+                    
+                    if str == "true" {
+                        completion(nil)
+                    } else {
+                        completion(CosyncJWTError.internalServerError)
+                    }
 
                 }
                 
