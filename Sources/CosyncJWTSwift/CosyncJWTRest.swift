@@ -70,6 +70,8 @@ public class CosyncJWTRest {
     public var phoneVerified: Bool?                 // true if phone number is verified
     public var metaData: [String:Any]?              // user metadata
     public var lastLogin: Date?                     // last login date in UTC
+    public var googleSecretKey: String?             // google secret key
+    public var QRDataImage: String?                 // google QR Data Image
 
     // application data
     public var appName: String?
@@ -91,6 +93,7 @@ public class CosyncJWTRest {
     static let setPhonePath = "api/appuser/setPhone"
     static let verifyPhonePath = "api/appuser/verifyPhone"
     static let setTwoFactorPhoneVerificationPath = "/api/appuser/setTwoFactorPhoneVerification"
+    static let setTwoFactorGoogleVerificationPath = "/api/appuser/setTwoFactorGoogleVerification"
     static let forgotPasswordPath = "api/appuser/forgotPassword"
     static let resetPasswordPath = "api/appuser/resetPassword"
     static let changePasswordPath = "api/appuser/changePassword"
@@ -723,7 +726,7 @@ public class CosyncJWTRest {
  
     }
     
-    // Set the phone number for the current user from CosyncJWT
+    // Set two factor phone verification for the user for CosyncJWT
     public func setTwoFactorPhoneVerification(_ twoFactor: Bool, onCompletion completion: @escaping (Error?) -> Void) {
         
         if  let cosyncRestAddress = self.cosyncRestAddress {
@@ -768,6 +771,7 @@ public class CosyncJWTRest {
                     let str = String(decoding: content, as: UTF8.self)
                     
                     if str == "true" {
+                        self.twoFactorPhoneVerification = twoFactor
                         completion(nil)
                     } else {
                         completion(CosyncJWTError.internalServerError)
@@ -784,8 +788,89 @@ public class CosyncJWTRest {
         } else {
             completion(CosyncJWTError.cosyncJWTConfiguration)
         }
+    }
+    
+    // Set two factor google verification for the user for CosyncJWT
+    public func setTwoFactorGoogleVerification(_ twoFactor: Bool, onCompletion completion: @escaping (Error?) -> Void) {
         
- 
+        if  let cosyncRestAddress = self.cosyncRestAddress {
+            
+            let restPath = cosyncRestAddress
+            if let accessToken = self.accessToken {
+                
+                let config = URLSessionConfiguration.default
+                config.httpAdditionalHeaders = ["access-token": accessToken]
+
+                let session = URLSession(configuration: config)
+                
+                let url = URL(string: "\(restPath)/\(CosyncJWTRest.setTwoFactorGoogleVerificationPath)")!
+                var urlRequest = URLRequest(url: url)
+                
+                urlRequest.httpMethod = "POST"
+                urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+                // your post request data
+                var requestBodyComponents = URLComponents()
+                
+                requestBodyComponents.queryItems = [URLQueryItem(name: "twoFactor", value: twoFactor ? "true" : "false")]
+
+                urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+
+                
+                let task = session.dataTask(with: urlRequest) { data, response, error in
+                
+                    // ensure there is no error for this HTTP response
+                    let errorResponse = CosyncJWTError.checkResponse(data: data, response: response, error: error)
+                    guard errorResponse == nil  else {
+                        completion(errorResponse)
+                        return
+                    }
+
+                    // ensure there is data returned from this HTTP response
+                    guard let content = data else {
+                        completion(CosyncJWTError.internalServerError)
+                        return
+                    }
+                    
+                    if twoFactor {
+                        
+                        guard let json = (try? JSONSerialization.jsonObject(with: content, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                            completion(CosyncJWTError.internalServerError)
+                            return
+                        }
+                        
+                        if let googleSecretKey = json["googleSecretKey"] as? String,
+                           let QRDataImage = json["QRDataImage"] as? String {
+                            
+                            self.googleSecretKey = googleSecretKey
+                            self.QRDataImage = QRDataImage
+
+                            completion(nil)
+                        } else {
+                            completion(CosyncJWTError.internalServerError)
+                        }
+                        
+                    } else {
+                        let str = String(decoding: content, as: UTF8.self)
+                        
+                        if str == "true" {
+                            self.twoFactorGoogleVerification = twoFactor
+                            completion(nil)
+                        } else {
+                            completion(CosyncJWTError.internalServerError)
+                        }
+                    }
+                }
+                
+                // execute the HTTP request
+                task.resume()
+                
+            } else {
+                completion(CosyncJWTError.internalServerError)
+            }
+        } else {
+            completion(CosyncJWTError.cosyncJWTConfiguration)
+        }
     }
     
     
