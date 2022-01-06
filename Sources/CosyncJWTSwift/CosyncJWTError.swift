@@ -95,75 +95,69 @@ public enum CosyncJWTError: Error {
         }
     }
     
-    static func checkResponse(data: Data?, response: URLResponse?, error: Error?) -> CosyncJWTError? {
+    static func checkResponse(data: Data, response: URLResponse) throws -> Void {
         
-        if error != nil {
-            return CosyncJWTError.internalServerError
-        }
         if let httpResponse = response as? HTTPURLResponse {
             if httpResponse.statusCode == 200 {
-                return nil
+                return
             }
             else if httpResponse.statusCode == 400 {
-                if let content = data {
-                    if let json = (try? JSONSerialization.jsonObject(with: content, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
-                        if let code = json["code"] as? Int {
-                            switch code {
+                if let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
+                    if let code = json["code"] as? Int {
+                        switch code {
 
-                            case 400:
-                                return CosyncJWTError.invalidAppToken
-                            case 401:
-                                return CosyncJWTError.appNoLongerExist
-                            case 402:
-                                return CosyncJWTError.appSuspended
-                            case 403:
-                                return CosyncJWTError.missingParameter
-                            case 404:
-                                return CosyncJWTError.accountSuspended
-                            case 405:
-                                return CosyncJWTError.invalidAccessToken
-                            case 406:
-                                return CosyncJWTError.appInviteNotSupported
-                            case 407:
-                                return CosyncJWTError.appSignupNotSupported
-                            case 408:
-                                return CosyncJWTError.appGoogle2FactorNotSupported
-                            case 409:
-                                return CosyncJWTError.appPhone2FactorNotSupported
-                            case 410:
-                                return CosyncJWTError.appUserPhoneNotVerified
-                            case 411:
-                                return CosyncJWTError.expiredSignupCode
-                            case 412:
-                                return CosyncJWTError.phoneNumberInUse
-                            case 500:
-                                return CosyncJWTError.internalServerError
-                            case 600:
-                                return CosyncJWTError.invalidLoginCredentials
-                            case 601:
-                                return CosyncJWTError.handleAlreadyRegistered
-                            case 602:
-                                return CosyncJWTError.invalidData
-                            case 603:
-                                return CosyncJWTError.emailDoesNotExist
-                            case 604:
-                                return CosyncJWTError.invalidMetaData
-                            default:
-                                return CosyncJWTError.internalServerError
-                            }
-                        } else {
-                            return CosyncJWTError.internalServerError
+                        case 400:
+                            throw CosyncJWTError.invalidAppToken
+                        case 401:
+                            throw CosyncJWTError.appNoLongerExist
+                        case 402:
+                            throw CosyncJWTError.appSuspended
+                        case 403:
+                            throw CosyncJWTError.missingParameter
+                        case 404:
+                            throw CosyncJWTError.accountSuspended
+                        case 405:
+                            throw CosyncJWTError.invalidAccessToken
+                        case 406:
+                            throw CosyncJWTError.appInviteNotSupported
+                        case 407:
+                            throw CosyncJWTError.appSignupNotSupported
+                        case 408:
+                            throw CosyncJWTError.appGoogle2FactorNotSupported
+                        case 409:
+                            throw CosyncJWTError.appPhone2FactorNotSupported
+                        case 410:
+                            throw CosyncJWTError.appUserPhoneNotVerified
+                        case 411:
+                            throw CosyncJWTError.expiredSignupCode
+                        case 412:
+                            throw CosyncJWTError.phoneNumberInUse
+                        case 500:
+                            throw CosyncJWTError.internalServerError
+                        case 600:
+                            throw CosyncJWTError.invalidLoginCredentials
+                        case 601:
+                            throw CosyncJWTError.handleAlreadyRegistered
+                        case 602:
+                            throw CosyncJWTError.invalidData
+                        case 603:
+                            throw CosyncJWTError.emailDoesNotExist
+                        case 604:
+                            throw CosyncJWTError.invalidMetaData
+                        default:
+                            throw CosyncJWTError.internalServerError
                         }
                     } else {
-                        return CosyncJWTError.internalServerError
+                        throw CosyncJWTError.internalServerError
                     }
                 } else {
-                    return CosyncJWTError.internalServerError
+                    throw CosyncJWTError.internalServerError
                 }
+
             } else if httpResponse.statusCode == 500 {
-                return CosyncJWTError.internalServerError
+                throw CosyncJWTError.internalServerError
             }
         }
-        return CosyncJWTError.internalServerError
+        throw CosyncJWTError.internalServerError
     }
 }
