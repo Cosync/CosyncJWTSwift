@@ -96,6 +96,7 @@ public class CosyncJWTRest {
     static let resetPasswordPath = "api/appuser/resetPassword"
     static let changePasswordPath = "api/appuser/changePassword"
     static let getApplicationPath = "api/appuser/getApplication"
+    static let setUserMetadataPath = "api/appuser/setUserMetadata"
     static let invitePath = "api/appuser/invite"
     static let registerPath = "api/appuser/register"
 
@@ -1096,6 +1097,53 @@ public class CosyncJWTRest {
             requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
                                                 URLQueryItem(name: "senderUserId", value: senderUserId)]
         }
+        
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+        
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            let str = String(decoding: data, as: UTF8.self)
+            
+            if str != "true" {
+                throw CosyncJWTError.internalServerError
+            }
+        }
+        catch let error as CosyncJWTError {
+            throw error
+        }
+        catch {
+            throw CosyncJWTError.internalServerError
+        }
+
+    }
+    
+    // Set user meta-data CosyncJWT
+    @MainActor public func setUserMetadata(_ metaData: String) async throws -> Void {
+
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let accessToken = self.accessToken else {
+            throw CosyncJWTError.internalServerError
+        }
+
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
+        
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.setUserMetadataPath)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+        // your post request data
+        var requestBodyComponents = URLComponents()
+
+        requestBodyComponents.queryItems = [URLQueryItem(name: "metaData", value: metaData)]
         
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
         
