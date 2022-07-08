@@ -51,7 +51,7 @@ public enum CosyncJWTError: Error {
     public var message: String {
         switch self {
         case .cosyncJWTConfiguration:
-            return "CosyncJWTRest not configured"
+            return "invalid api configuration"
         case .invalidAppToken:
             return "invalid app token"
         case .appNoLongerExist:
