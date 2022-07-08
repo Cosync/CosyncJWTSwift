@@ -199,8 +199,6 @@ public class CosyncJWTRest {
             throw CosyncJWTError.cosyncJWTConfiguration
         }
 
-        try await CosyncJWTRest.shared.getApplication()
-
         let config = URLSessionConfiguration.default
 
         let session = URLSession(configuration: config)
