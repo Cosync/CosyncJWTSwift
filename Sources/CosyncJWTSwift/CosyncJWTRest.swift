@@ -72,6 +72,7 @@ public class CosyncJWTRest {
     public var QRDataImage: String?                 // google QR Data Image
 
     // application data
+    public var signupFlow: String?
     public var appName: String?
     public var twoFactorVerification: String?
     var passwordFilter: Bool?
@@ -291,7 +292,7 @@ public class CosyncJWTRest {
                 
                 let str = String(decoding: data, as: UTF8.self)
                 
-                if str != "true" {
+                if str != "true" && self.signupFlow != "none" {
                     throw CosyncJWTError.internalServerError
                 }
                 
@@ -1028,6 +1029,9 @@ public class CosyncJWTRest {
             
             if let name = json["name"] as? String {
                 self.appName = name
+            }
+            if let signFlow = json["signupFlow"] as? String {
+                self.signupFlow = signFlow
             }
             
             if let twoFactorVerification = json["twoFactorVerification"] as? String {
