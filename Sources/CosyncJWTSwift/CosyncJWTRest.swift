@@ -295,6 +295,23 @@ public class CosyncJWTRest {
                 if str != "true" && self.signupFlow != "none" {
                     throw CosyncJWTError.internalServerError
                 }
+                else if self.signupFlow == "none"{
+                    
+                    guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                        throw CosyncJWTError.internalServerError
+                    }
+                    
+                    if let jwt = json["jwt"] as? String,
+                       let accessToken = json["access-token"] as? String {
+                        
+                        self.jwt = jwt
+                        self.accessToken = accessToken
+
+                    }
+                    else {
+                        throw CosyncJWTError.internalServerError
+                    }
+                }
                 
             }
             catch let error as CosyncJWTError {
