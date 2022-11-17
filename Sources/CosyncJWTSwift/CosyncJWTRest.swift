@@ -75,6 +75,7 @@ public class CosyncJWTRest {
     public var signupFlow: String?
     public var appName: String?
     public var twoFactorVerification: String?
+    var anonymousLoginEnabled: Bool?
     var passwordFilter: Bool?
     var passwordMinLength: Int?
     var passwordMinUpper: Int?
@@ -83,7 +84,7 @@ public class CosyncJWTRest {
     var passwordMinSpecial: Int?
     
     var appData: [String:Any]?
-    
+    static let loginAnonymousPath = "api/appuser/loginAnonymous"
     static let loginPath = "api/appuser/login"
     static let loginCompletePath = "api/appuser/loginComplete"
     static let signupPath = "api/appuser/signup"
@@ -112,6 +113,76 @@ public class CosyncJWTRest {
         } else {
             self.cosyncRestAddress = cosyncRestAddress
         }
+    }
+    
+    // Login into CosyncJWT
+    @MainActor public func loginAnonymous(_ handle: String) async throws -> Void {
+        self.jwt = nil
+        self.accessToken = nil
+        self.loginToken = nil
+
+        guard handle.contains("ANON_") == true else {
+            throw CosyncJWTError.invalidLoginCredentials
+        }
+        
+        guard let appToken = self.appToken else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        try await CosyncJWTRest.shared.getApplication()
+        
+        guard self.anonymousLoginEnabled == true else {
+            throw CosyncJWTError.anonymousLoginNotSupported
+        }
+        
+       
+        let config = URLSessionConfiguration.default
+
+        let session = URLSession(configuration: config)
+        
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.loginAnonymousPath)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["app-token": appToken]
+
+        // your post request data
+        var requestBodyComponents = URLComponents()
+        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle)]
+        
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+        
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            // deserialise the data / NSData object into Dictionary [String : Any]
+            guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                throw CosyncJWTError.internalServerError
+            }
+            
+            if let jwt = json["jwt"] as? String,
+               let accessToken = json["access-token"] as? String {
+                
+                self.jwt = jwt
+                self.accessToken = accessToken
+
+            } else {
+                throw CosyncJWTError.internalServerError
+            }
+        }
+        catch let error as CosyncJWTError {
+            throw error
+        }
+        catch {
+            throw CosyncJWTError.internalServerError
+        }
+        
     }
     
     // Login into CosyncJWT
@@ -1052,6 +1123,9 @@ public class CosyncJWTRest {
             }
             if let signFlow = json["signupFlow"] as? String {
                 self.signupFlow = signFlow
+            }
+            if let anonLoginEnabled = json["anonymousLoginEnabled"] as? Bool {
+                self.anonymousLoginEnabled = anonLoginEnabled
             }
             
             if let twoFactorVerification = json["twoFactorVerification"] as? String {

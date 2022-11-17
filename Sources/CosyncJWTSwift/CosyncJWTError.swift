@@ -40,6 +40,8 @@ public enum CosyncJWTError: Error {
     case appUserPhoneNotVerified        // 410
     case expiredSignupCode              // 411
     case phoneNumberInUse               // 412
+    case appIsMirgrated                 // 413
+    case anonymousLoginNotSupported     // 414
     case internalServerError            // 500
     case invalidLoginCredentials        // 600
     case handleAlreadyRegistered        // 601
@@ -92,6 +94,10 @@ public enum CosyncJWTError: Error {
             return "invalid metadata"
         case .invalidPassword:
             return "invalid Password"
+        case .anonymousLoginNotSupported:
+            return "app does not support anonymous login"
+        case .appIsMirgrated:
+            return "app is migrated to other server"
         }
     }
     
@@ -132,6 +138,10 @@ public enum CosyncJWTError: Error {
                             throw CosyncJWTError.expiredSignupCode
                         case 412:
                             throw CosyncJWTError.phoneNumberInUse
+                        case 413:
+                            throw CosyncJWTError.appIsMirgrated
+                        case 414:
+                            throw CosyncJWTError.anonymousLoginNotSupported
                         case 500:
                             throw CosyncJWTError.internalServerError
                         case 600:
