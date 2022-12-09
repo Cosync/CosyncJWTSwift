@@ -212,8 +212,10 @@ public class CosyncJWTRest {
         urlRequest.allHTTPHeaderFields = ["app-token": appToken]
 
         // your post request data
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+        
         var requestBodyComponents = URLComponents()
-        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                             URLQueryItem(name: "password", value: password.md5())]
         
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
@@ -342,14 +344,15 @@ public class CosyncJWTRest {
             urlRequest.allHTTPHeaderFields = ["app-token": appToken]
 
             // your post request data
+            let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
             var requestBodyComponents = URLComponents()
             if let metaData = metaData {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                                     URLQueryItem(name: "password", value: password.md5()),
                                                     URLQueryItem(name: "metaData", value: metaData)]
 
             } else {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                                     URLQueryItem(name: "password", value: password.md5())]
             }
             
@@ -433,15 +436,15 @@ public class CosyncJWTRest {
 
             // your post request data
             var requestBodyComponents = URLComponents()
-            
+            let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
             if let metaData = metaData {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                                     URLQueryItem(name: "password", value: password.md5()),
                                                     URLQueryItem(name: "code", value: code),
                                                     URLQueryItem(name: "metaData", value: metaData)]
 
             } else {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                                     URLQueryItem(name: "password", value: password.md5()),
                                                     URLQueryItem(name: "code", value: code)]
             }
@@ -582,8 +585,8 @@ public class CosyncJWTRest {
 
         // your post request data
         var requestBodyComponents = URLComponents()
-        
-        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                             URLQueryItem(name: "code", value: code)]
 
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
@@ -961,8 +964,8 @@ public class CosyncJWTRest {
 
         // your post request data
         var requestBodyComponents = URLComponents()
-        
-        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle)]
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail)]
 
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
 
@@ -1009,8 +1012,8 @@ public class CosyncJWTRest {
 
         // your post request data
         var requestBodyComponents = URLComponents()
-        
-        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                             URLQueryItem(name: "password", value: password.md5()),
                                             URLQueryItem(name: "code", value: code)]
 
@@ -1184,13 +1187,14 @@ public class CosyncJWTRest {
 
         // your post request data
         var requestBodyComponents = URLComponents()
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
         if let metaData = metaData {
-            requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+            requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                                 URLQueryItem(name: "metaData", value: metaData),
                                                 URLQueryItem(name: "senderUserId", value: senderUserId)]
 
         } else {
-            requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: handle),
+            requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
                                                 URLQueryItem(name: "senderUserId", value: senderUserId)]
         }
         
