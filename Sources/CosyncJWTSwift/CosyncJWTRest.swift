@@ -216,7 +216,10 @@ public class CosyncJWTRest {
         urlRequest.allHTTPHeaderFields = ["app-token": appToken]
         
         
-        if self.userNamesEnabled != nil && self.userNamesEnabled! == false && !handle.contains("@"){
+        if let username = self.userNamesEnabled {
+             // good to go
+        }
+        else if !handle.contains("@"){
             throw CosyncJWTError.appIsNotSupporUserName
         }
         
