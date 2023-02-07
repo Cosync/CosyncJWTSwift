@@ -48,7 +48,6 @@ public enum CosyncJWTError: Error {
     case invalidData                    // 602
     case emailDoesNotExist              // 603
     case invalidMetaData                // 604
-    case invalidMetaData                // 604
     case userNameAlreadyInUse           // 605
     case appIsNotSupporUserName         // 606
     
@@ -93,7 +92,7 @@ public enum CosyncJWTError: Error {
         case .emailDoesNotExist:
             return "email does not exist"
         case .invalidMetaData:
-            return "invalid metadata" 
+            return "invalid metadata"
         case .anonymousLoginNotSupported:
             return "app does not support anonymous login"
         case .appIsMirgrated:
