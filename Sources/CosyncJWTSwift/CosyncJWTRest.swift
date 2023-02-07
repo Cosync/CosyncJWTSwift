@@ -214,7 +214,12 @@ public class CosyncJWTRest {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.allHTTPHeaderFields = ["app-token": appToken]
-
+        
+        
+        if !self.userNamesEnabled && !handle.contains("@"){
+            throw CosyncJWTError.appIsNotSupporUserName
+        }
+        
         // your post request data
         let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
         
