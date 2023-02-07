@@ -50,6 +50,7 @@ public enum CosyncJWTError: Error {
     case invalidMetaData                // 604
     case userNameAlreadyInUse           // 605
     case appIsNotSupporUserName         // 606
+    case invalidPassword
     
     public var message: String {
         switch self {
@@ -93,6 +94,8 @@ public enum CosyncJWTError: Error {
             return "email does not exist"
         case .invalidMetaData:
             return "invalid metadata"
+        case .invalidPassword:
+            return "invalid password requirements"
         case .anonymousLoginNotSupported:
             return "app does not support anonymous login"
         case .appIsMirgrated:
