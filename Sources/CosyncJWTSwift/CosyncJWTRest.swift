@@ -1135,7 +1135,7 @@ public class CosyncJWTRest {
                 self.anonymousLoginEnabled = anonLoginEnabled
             }
             if let userNamesEnabled = json["userNamesEnabled"] as? Bool {
-                self.anonymousLoginEnabled = userNamesEnabled
+                self.userNamesEnabled = userNamesEnabled
             }
             
             if let twoFactorVerification = json["twoFactorVerification"] as? String {
