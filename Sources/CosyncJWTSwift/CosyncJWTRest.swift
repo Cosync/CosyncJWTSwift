@@ -72,10 +72,12 @@ public class CosyncJWTRest {
     public var QRDataImage: String?                 // google QR Data Image
 
     // application data
+    public var appData: [String:Any]?
     public var signupFlow: String?
     public var appName: String?
     public var twoFactorVerification: String?
-    var anonymousLoginEnabled: Bool?
+    public var userNamesEnabled:Bool?
+    public var anonymousLoginEnabled: Bool?
     var passwordFilter: Bool?
     var passwordMinLength: Int?
     var passwordMinUpper: Int?
@@ -83,7 +85,7 @@ public class CosyncJWTRest {
     var passwordMinDigit: Int?
     var passwordMinSpecial: Int?
     
-    var appData: [String:Any]?
+    
     static let loginAnonymousPath = "api/appuser/loginAnonymous"
     static let loginPath = "api/appuser/login"
     static let loginCompletePath = "api/appuser/loginComplete"
@@ -99,6 +101,8 @@ public class CosyncJWTRest {
     static let changePasswordPath = "api/appuser/changePassword"
     static let getApplicationPath = "api/appuser/getApplication"
     static let setUserMetadataPath = "api/appuser/setUserMetadata"
+    static let setUserNamePath = "api/appuser/setUserName"
+    static let userNameAvailable = "api/appuser/userNameAvailable"
     static let invitePath = "api/appuser/invite"
     static let registerPath = "api/appuser/register"
 
@@ -1130,6 +1134,9 @@ public class CosyncJWTRest {
             if let anonLoginEnabled = json["anonymousLoginEnabled"] as? Bool {
                 self.anonymousLoginEnabled = anonLoginEnabled
             }
+            if let userNamesEnabled = json["userNamesEnabled"] as? Bool {
+                self.anonymousLoginEnabled = userNamesEnabled
+            }
             
             if let twoFactorVerification = json["twoFactorVerification"] as? String {
                 self.twoFactorVerification = twoFactorVerification
@@ -1244,6 +1251,102 @@ public class CosyncJWTRest {
         var requestBodyComponents = URLComponents()
 
         requestBodyComponents.queryItems = [URLQueryItem(name: "metaData", value: metaData)]
+        
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+        
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            let str = String(decoding: data, as: UTF8.self)
+            
+            if str != "true" {
+                throw CosyncJWTError.internalServerError
+            }
+        }
+        catch let error as CosyncJWTError {
+            throw error
+        }
+        catch {
+            throw CosyncJWTError.internalServerError
+        }
+
+    }
+    
+    
+    // check user name available CosyncJWT
+    @MainActor public func userNameAvailable(_ userName: String) async throws -> Void {
+
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let accessToken = self.accessToken else {
+            throw CosyncJWTError.internalServerError
+        }
+
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
+        
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+        // your post request data
+        var requestBodyComponents = URLComponents()
+
+        requestBodyComponents.queryItems = [URLQueryItem(name: "userName", value: userName)]
+        
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+        
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            let str = String(decoding: data, as: UTF8.self)
+            
+            if str != "true" {
+                throw CosyncJWTError.internalServerError
+            }
+        }
+        catch let error as CosyncJWTError {
+            throw error
+        }
+        catch {
+            throw CosyncJWTError.internalServerError
+        }
+
+    }
+    
+    
+    // Set user name CosyncJWT
+    @MainActor public func setUserName(_ userName: String) async throws -> Void {
+
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let accessToken = self.accessToken else {
+            throw CosyncJWTError.internalServerError
+        }
+
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
+        
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.setUserNamePath)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+        // your post request data
+        var requestBodyComponents = URLComponents()
+
+        requestBodyComponents.queryItems = [URLQueryItem(name: "userName", value: userName)]
         
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
         

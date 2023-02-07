@@ -48,7 +48,9 @@ public enum CosyncJWTError: Error {
     case invalidData                    // 602
     case emailDoesNotExist              // 603
     case invalidMetaData                // 604
-    case invalidPassword
+    case invalidMetaData                // 604
+    case userNameAlreadyInUse           // 605
+    case appIsNotSupporUserName         // 606
     
     public var message: String {
         switch self {
@@ -91,13 +93,15 @@ public enum CosyncJWTError: Error {
         case .emailDoesNotExist:
             return "email does not exist"
         case .invalidMetaData:
-            return "invalid metadata"
-        case .invalidPassword:
-            return "invalid Password"
+            return "invalid metadata" 
         case .anonymousLoginNotSupported:
             return "app does not support anonymous login"
         case .appIsMirgrated:
             return "app is migrated to other server"
+        case .userNameAlreadyInUse:
+            return "user name already assigned"
+        case .appIsNotSupporUserName:
+            return "app does not support username login"
         }
     }
     
@@ -154,6 +158,10 @@ public enum CosyncJWTError: Error {
                             throw CosyncJWTError.emailDoesNotExist
                         case 604:
                             throw CosyncJWTError.invalidMetaData
+                        case 605:
+                            throw CosyncJWTError.userNameAlreadyInUse
+                        case 606:
+                            throw CosyncJWTError.appIsNotSupporUserName
                         default:
                             throw CosyncJWTError.internalServerError
                         }
