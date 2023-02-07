@@ -215,16 +215,15 @@ public class CosyncJWTRest {
         urlRequest.httpMethod = "POST"
         urlRequest.allHTTPHeaderFields = ["app-token": appToken]
         
+        // your post request data
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
         
         if let username = self.userNamesEnabled {
              // good to go
         }
-        else if !handle.contains("@"){
+        else if !moddedEmail.contains("@"){
             throw CosyncJWTError.appIsNotSupporUserName
         }
-        
-        // your post request data
-        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
         
         var requestBodyComponents = URLComponents()
         requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
