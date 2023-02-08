@@ -1291,12 +1291,13 @@ public class CosyncJWTRest {
         guard let accessToken = self.accessToken else {
             throw CosyncJWTError.internalServerError
         }
-        guard let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
+        
+        guard let urlRequest = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
             throw CosyncJWTError.internalServerError
         }
 
         let config = URLSessionConfiguration.default
-        config.httpAdditionalHeaders = ["access-token": self.accessToken]
+        config.httpAdditionalHeaders = ["access-token": accessToken]
 
         let session = URLSession(configuration: config)
         
