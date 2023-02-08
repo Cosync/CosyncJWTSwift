@@ -1290,22 +1290,19 @@ public class CosyncJWTRest {
         
         guard let accessToken = self.accessToken else {
             throw CosyncJWTError.internalServerError
-        }
-        
-       
-        
+        } 
+   
         guard let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
             throw CosyncJWTError.internalServerError
         }
-        var urlRequest = URLRequest(url: url)
-
+        
         let config = URLSessionConfiguration.default
         config.httpAdditionalHeaders = ["access-token": accessToken]
 
         let session = URLSession(configuration: config)
         
         do {
-            let (data, response) = try await session.data(for: urlRequest)
+            let (data, response) = try await session.data(from: url)
             
             // ensure there is no error for this HTTP response
             try CosyncJWTError.checkResponse(data: data, response: response)
