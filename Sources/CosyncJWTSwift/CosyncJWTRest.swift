@@ -636,6 +636,7 @@ public class CosyncJWTRest {
     @MainActor public func getUser() async throws -> Void {
         
         self.handle = nil
+        self.userName = nil
         self.twoFactorPhoneVerification = nil
         self.twoFactorGoogleVerification = nil
         self.appId = nil
@@ -671,6 +672,8 @@ public class CosyncJWTRest {
             guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
                 throw CosyncJWTError.internalServerError
             }
+            print("CosyncJWTTest: getUser result: ")
+            print(json)
             
             if let handle = json["handle"] as? String {
                 self.handle = handle
