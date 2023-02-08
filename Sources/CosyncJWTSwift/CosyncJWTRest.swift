@@ -1291,21 +1291,14 @@ public class CosyncJWTRest {
         guard let accessToken = self.accessToken else {
             throw CosyncJWTError.internalServerError
         }
+        guard let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
+            throw CosyncJWTError.internalServerError
+        }
 
         let config = URLSessionConfiguration.default
+        config.httpAdditionalHeaders = ["access-token": self.accessToken]
+
         let session = URLSession(configuration: config)
-        
-        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)")!
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "GET"
-        urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
-
-        // your post request data
-        var requestBodyComponents = URLComponents()
-
-        requestBodyComponents.queryItems = [URLQueryItem(name: "userName", value: userName)]
-        
-        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
         
         do {
             let (data, response) = try await session.data(for: urlRequest)
