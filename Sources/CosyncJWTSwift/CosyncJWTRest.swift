@@ -1329,7 +1329,7 @@ public class CosyncJWTRest {
             throw error
         }
         catch {
-            throw CosyncJWTError.internalServerError
+            throw error
         }
 
     }
@@ -1377,7 +1377,7 @@ public class CosyncJWTRest {
             throw error
         }
         catch {
-            throw CosyncJWTError.internalServerError
+            throw error
         }
 
     }
