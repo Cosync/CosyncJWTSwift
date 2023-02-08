@@ -1282,8 +1282,8 @@ public class CosyncJWTRest {
     
     
     // check user name available CosyncJWT
-    @MainActor public func userNameAvailable(_ userName: String) async throws -> Void {
-
+    @MainActor public func userNameAvailable(_ userName: String) async throws -> Bool {
+        
         guard let cosyncRestAddress = self.cosyncRestAddress else {
             throw CosyncJWTError.cosyncJWTConfiguration
         }
@@ -1313,11 +1313,17 @@ public class CosyncJWTRest {
             // ensure there is no error for this HTTP response
             try CosyncJWTError.checkResponse(data: data, response: response)
             
-            let str = String(decoding: data, as: UTF8.self)
-            
-            if str != "true" {
+            guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
                 throw CosyncJWTError.internalServerError
             }
+            
+            if let available = json["available"] as? Bool {
+                return available
+            }
+            else {
+                return false
+            }
+            
         }
         catch let error as CosyncJWTError {
             throw error
