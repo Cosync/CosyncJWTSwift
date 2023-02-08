@@ -1295,9 +1295,9 @@ public class CosyncJWTRest {
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config)
         
-        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)")!
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)")!
         var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
+        urlRequest.httpMethod = "GET"
         urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
 
         // your post request data
