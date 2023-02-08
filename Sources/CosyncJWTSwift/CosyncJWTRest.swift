@@ -61,6 +61,7 @@ public class CosyncJWTRest {
     // Logged in user data
     public var status: String?                      // 'active', or 'suspend'
     public var handle: String?                      // user email or phone
+    public var userName: String?                    // user name to login
     public var twoFactorPhoneVerification: Bool?    // user 2-factor phone verification enabled
     public var twoFactorGoogleVerification: Bool?   // user 2-factor google verification enabled
     public var appId: String?                       // CosyncJWT app id
@@ -673,6 +674,10 @@ public class CosyncJWTRest {
             
             if let handle = json["handle"] as? String {
                 self.handle = handle
+            }
+            
+            if let userName = json["userName"] as? String {
+                self.userName = userName
             }
             
             if let twoFactorPhoneVerification = json["twoFactorPhoneVerification"] as? Bool {
@@ -1290,7 +1295,7 @@ public class CosyncJWTRest {
         
         guard let accessToken = self.accessToken else {
             throw CosyncJWTError.internalServerError
-        } 
+        }
    
         guard let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
             throw CosyncJWTError.internalServerError
@@ -1365,6 +1370,9 @@ public class CosyncJWTRest {
             
             if str != "true" {
                 throw CosyncJWTError.internalServerError
+            }
+            else {
+                self.userName = userName
             }
         }
         catch let error as CosyncJWTError {
