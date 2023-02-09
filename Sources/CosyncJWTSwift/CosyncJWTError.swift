@@ -50,6 +50,8 @@ public enum CosyncJWTError: Error {
     case invalidMetaData                // 604
     case userNameAlreadyInUse           // 605
     case appIsNotSupporUserName         // 606
+    case userNameDoesNotExist           // 607
+    case accountIsNotVerify             // 608
     case invalidPassword
     
     public var message: String {
@@ -104,6 +106,10 @@ public enum CosyncJWTError: Error {
             return "user name already assigned"
         case .appIsNotSupporUserName:
             return "app does not support username login"
+        case .userNameDoesNotExist:
+            return "user name deos not exist"
+        case .accountIsNotVerify:
+            return "account has not been verified"
         }
     }
     
@@ -164,6 +170,11 @@ public enum CosyncJWTError: Error {
                             throw CosyncJWTError.userNameAlreadyInUse
                         case 606:
                             throw CosyncJWTError.appIsNotSupporUserName
+                        case 607:
+                            throw CosyncJWTError.userNameDoesNotExist
+                        case 608:
+                            throw CosyncJWTError.accountIsNotVerify
+                            
                         default:
                             throw CosyncJWTError.internalServerError
                         }
