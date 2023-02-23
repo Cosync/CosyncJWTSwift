@@ -106,7 +106,8 @@ public class CosyncJWTRest {
     static let userNameAvailable = "api/appuser/userNameAvailable"
     static let invitePath = "api/appuser/invite"
     static let registerPath = "api/appuser/register"
-
+    static let deleteAccountPath = "api/appuser/deleteAccount"
+    
     public static let shared = CosyncJWTRest()
     
     // Configure
@@ -1240,6 +1241,59 @@ public class CosyncJWTRest {
         }
 
     }
+    
+    
+    
+       // Delete App User Account from CosyncJWT
+       @MainActor public func deleteAccount(_ handle: String, password: String) async throws -> Void {
+
+           guard let cosyncRestAddress = self.cosyncRestAddress else {
+               throw CosyncJWTError.cosyncJWTConfiguration
+           }
+           
+           guard let accessToken = self.accessToken else {
+               throw CosyncJWTError.internalServerError
+           }
+
+           let config = URLSessionConfiguration.default
+           let session = URLSession(configuration: config)
+           
+           let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.deleteAccountPath)")!
+           var urlRequest = URLRequest(url: url)
+           urlRequest.httpMethod = "POST"
+           urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+           // your post request data
+           var requestBodyComponents = URLComponents()
+           let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+           
+           requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                   URLQueryItem(name: "password", value: password.md5())]
+
+            
+           
+           urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+           
+           do {
+               let (data, response) = try await session.data(for: urlRequest)
+               
+               // ensure there is no error for this HTTP response
+               try CosyncJWTError.checkResponse(data: data, response: response)
+               
+               let str = String(decoding: data, as: UTF8.self)
+               
+               if str != "true" {
+                   throw CosyncJWTError.internalServerError
+               }
+           }
+           catch let error as CosyncJWTError {
+               throw error
+           }
+           catch {
+               throw CosyncJWTError.internalServerError
+           }
+
+       }
     
     // Set user meta-data CosyncJWT
     @MainActor public func setUserMetadata(_ metaData: String) async throws -> Void {
