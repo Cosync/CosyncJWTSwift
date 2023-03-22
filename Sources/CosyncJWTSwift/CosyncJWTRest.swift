@@ -26,6 +26,7 @@
 import Foundation
 import CryptoKit
 
+@available(macOS 10.15, *)
 extension String {
 
     func md5() -> String {
@@ -44,6 +45,7 @@ extension String {
 }
 
 
+@available(macOS 10.15.0, *)
 public class CosyncJWTRest {
     
     // Configuration
@@ -87,9 +89,9 @@ public class CosyncJWTRest {
     var passwordMinSpecial: Int?
     
     
-    static let loginAnonymousPath = "api/appuser/loginAnonymous"
     static let loginPath = "api/appuser/login"
     static let loginCompletePath = "api/appuser/loginComplete"
+    static let loginAnonymousPath = "api/appuser/loginAnonymous"
     static let signupPath = "api/appuser/signup"
     static let completeSignupPath = "api/appuser/completeSignup"
     static let getUserPath = "api/appuser/getUser"
@@ -328,6 +330,14 @@ public class CosyncJWTRest {
             throw CosyncJWTError.internalServerError
         }
 
+    }
+    
+    @MainActor public func logout() {
+        self.jwt = nil
+        self.accessToken = nil
+        self.handle = nil
+        self.metaData = nil
+        self.lastLogin = nil
     }
 
     // Singup into CosyncJWT
@@ -1242,58 +1252,55 @@ public class CosyncJWTRest {
 
     }
     
-    
-    
-       // Delete App User Account from CosyncJWT
-       @MainActor public func deleteAccount(_ handle: String, password: String) async throws -> Void {
+    // Delete App User Account from CosyncJWT
+    @MainActor public func deleteAccount(_ handle: String, password: String) async throws -> Void {
 
-           guard let cosyncRestAddress = self.cosyncRestAddress else {
-               throw CosyncJWTError.cosyncJWTConfiguration
-           }
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+           throw CosyncJWTError.cosyncJWTConfiguration
+        }
+
+        guard let accessToken = self.accessToken else {
+           throw CosyncJWTError.internalServerError
+        }
+
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
+
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.deleteAccountPath)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+        // your post request data
+        var requestBodyComponents = URLComponents()
+        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+
+        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                               URLQueryItem(name: "password", value: password.md5())]
+
+
+
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+
+        do {
+           let (data, response) = try await session.data(for: urlRequest)
            
-           guard let accessToken = self.accessToken else {
+           // ensure there is no error for this HTTP response
+           try CosyncJWTError.checkResponse(data: data, response: response)
+           
+           let str = String(decoding: data, as: UTF8.self)
+           
+           if str != "true" {
                throw CosyncJWTError.internalServerError
            }
-
-           let config = URLSessionConfiguration.default
-           let session = URLSession(configuration: config)
-           
-           let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.deleteAccountPath)")!
-           var urlRequest = URLRequest(url: url)
-           urlRequest.httpMethod = "POST"
-           urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
-
-           // your post request data
-           var requestBodyComponents = URLComponents()
-           let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
-           
-           requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
-                                                   URLQueryItem(name: "password", value: password.md5())]
-
-            
-           
-           urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
-           
-           do {
-               let (data, response) = try await session.data(for: urlRequest)
-               
-               // ensure there is no error for this HTTP response
-               try CosyncJWTError.checkResponse(data: data, response: response)
-               
-               let str = String(decoding: data, as: UTF8.self)
-               
-               if str != "true" {
-                   throw CosyncJWTError.internalServerError
-               }
-           }
-           catch let error as CosyncJWTError {
-               throw error
-           }
-           catch {
-               throw CosyncJWTError.internalServerError
-           }
-
-       }
+        }
+        catch let error as CosyncJWTError {
+           throw error
+        }
+        catch {
+           throw CosyncJWTError.internalServerError
+        }
+    }
     
     // Set user meta-data CosyncJWT
     @MainActor public func setUserMetadata(_ metaData: String) async throws -> Void {
@@ -1341,55 +1348,6 @@ public class CosyncJWTRest {
         }
 
     }
-    
-    
-    // check user name available CosyncJWT
-    @MainActor public func userNameAvailable(_ userName: String) async throws -> Bool {
-        
-        guard let cosyncRestAddress = self.cosyncRestAddress else {
-            throw CosyncJWTError.cosyncJWTConfiguration
-        }
-        
-        guard let accessToken = self.accessToken else {
-            throw CosyncJWTError.internalServerError
-        }
-   
-        guard let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
-            throw CosyncJWTError.internalServerError
-        }
-        
-        let config = URLSessionConfiguration.default
-        config.httpAdditionalHeaders = ["access-token": accessToken]
-
-        let session = URLSession(configuration: config)
-        
-        do {
-            let (data, response) = try await session.data(from: url)
-            
-            // ensure there is no error for this HTTP response
-            try CosyncJWTError.checkResponse(data: data, response: response)
-            
-            guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
-                throw CosyncJWTError.internalServerError
-            }
-            
-            if let available = json["available"] as? Bool {
-                return available
-            }
-            else {
-                return false
-            }
-            
-        }
-        catch let error as CosyncJWTError {
-            throw error
-        }
-        catch {
-            throw error
-        }
-
-    }
-    
     
     // Set user name CosyncJWT
     @MainActor public func setUserName(_ userName: String) async throws -> Void {
@@ -1441,12 +1399,53 @@ public class CosyncJWTRest {
 
     }
     
-    @MainActor public func logout() {
-        self.jwt = nil
-        self.accessToken = nil
-        self.handle = nil
-        self.metaData = nil
-        self.lastLogin = nil
+    // check user name available CosyncJWT
+    @MainActor public func userNameAvailable(_ userName: String) async throws -> Bool {
+        
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let accessToken = self.accessToken else {
+            throw CosyncJWTError.internalServerError
+        }
+   
+        guard let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.userNameAvailable)?userName=\(userName)") else {
+            throw CosyncJWTError.internalServerError
+        }
+        
+        let config = URLSessionConfiguration.default
+        config.httpAdditionalHeaders = ["access-token": accessToken]
+
+        let session = URLSession(configuration: config)
+        
+        do {
+            let (data, response) = try await session.data(from: url)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                throw CosyncJWTError.internalServerError
+            }
+            
+            if let available = json["available"] as? Bool {
+                return available
+            }
+            else {
+                return false
+            }
+            
+        }
+        catch let error as CosyncJWTError {
+            throw error
+        }
+        catch {
+            throw error
+        }
+
     }
+    
 
 }
+

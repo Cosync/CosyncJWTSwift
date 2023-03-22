@@ -18,6 +18,44 @@ The CosyncJWTSwift package is used to add functional bindings between a Swift iO
 
 4. Select the Package Product; **CosyncJWTSwift**, then click **Finish**
 
+# CosyncJWTRest class
+
+The **CosyncJWTRest** class provides a Swift API to the REST API to the CosyncJWT service. This class is modeled on a *singleton* architecture, where is access is called through the **shared** static variable of the class. 
+
+All Swift API functions to the CosyncJWT service are **async** functions that execute and block on the main thread. 
+
+These async functions do not return data to the calling function, rather they set instance variable data on the **CosyncJWTRest.shared** object. All errors are handled by throwing **CosyncJWTError** exceptions from within the **async** functions. The calling code must handle these exceptions by placing the Swift function calls within a *do/catch* statement. 
+
+The **CosyncJWTError** class includes the following enumerations:
+
+- cosyncJWTConfiguration
+- invalidAppToken
+- appNoLongerExist
+- appSuspended
+- missingParameter
+- accountSuspended
+- invalidAccessToken
+- appInviteNotSupported
+- appSignupNotSupported
+- appGoogle2FactorNotSupported
+- appPhone2FactorNotSupported
+- appUserPhoneNotVerified
+- expiredSignupCode
+- phoneNumberInUse
+- appIsMirgrated
+- anonymousLoginNotSupported
+- internalServerError
+- invalidLoginCredentials
+- handleAlreadyRegistered
+- invalidData
+- emailDoesNotExist
+- invalidMetaData
+- userNameAlreadyInUse
+- appIsNotSupporUserName
+- userNameDoesNotExist
+- accountIsNotVerify
+- invalidPassword
+
 # Function API
 
 The CosyncJWTSwift provides a number of Swift functions 
@@ -36,7 +74,11 @@ The *configure()* function call is used to the CosyncJWTSwift to operate with a 
 
 **appToken** : String - this contains the application token for CosyncJWT (usually retrieved from the Keys section of the Cosync Portal. 
 
-**cosyncRestAddress** : String - this optional parameter contains the HTTPS REST API address for the CosyncJWT service. The default is 'https://rest.cosync.net' if not specified.
+**cosyncRestAddress** : String - this optional parameter contains the HTTPS REST API address for the CosyncJWT service. The default is 'https://sandbox.cosync.net' if not specified.
+
+For self-hosted versions of the CosyncJWT server, the **cosyncRestAddress** is the HTTPS REST API address of the self-hosted server.
+
+This function does not throw any exceptions.
 
 ### Example
 
@@ -48,7 +90,9 @@ The *configure()* function call is used to the CosyncJWTSwift to operate with a 
 
 ## login
 
-The *login()* function is used to login into a user's account. If the login is successful, the **error** parameter on the **completion** function will be **nil**, and the login credentials will be saved in member variables of the **CosyncJWTRest** shared object:
+<img width="900" src="./images/login.svg">
+
+The *login()* function is used to login into a user's account. If the login is successful it will return to the caller, the login credentials will be saved in member variables of the **CosyncJWTRest** shared object:
 
 * **jwt**: the JWT token of the logged in user
 * **accessToken**: the access token of the logged in user
@@ -61,42 +105,48 @@ This **loginToken** will be used by the *loginComplete()* function, which is pas
 ```
 	public func login(
 		_ handle: String, 
-		password: String, 
-		onCompletion completion: @escaping (Error?) -> Void
-		)
+		password: String
+        ) async throws -> Void
 ```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
 
 ### Parameters
 
-**handle** : String - this contains the user's handle or email. 
+**handle** : String - this contains the user's user name or email. 
 
 **password** : String - this contains the user's password.
-
-**onCompletion**: Function - this is called upon completion of the login
 
 ### Example
 
 ```
-	CosyncJWTRest.shared.login(email, 
-		password: password, 
-		onCompletion: { (error) in
-		})
+	do {
+		try await CosyncJWTRest.shared.login(email, password: password)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
+
 ## loginComplete
+
+<img width="900" src="./images/loginComplete.svg">
 
 The *loginComplete()* function is used to complete a login into a user's account with a 2FA code - provided by the Google authenticator or from a Twilio SMS message for phone 2FA verification. 
 
-If the login complete is successful, the **error** parameter on the **completion** function will be **nil**, and the login credentials will be saved in member variables of the **CosyncJWTRest** shared object:
+The *loginComplete()* function will use the **loginToken** saved in the **CosyncJWTRest** shared object, that was returned by the *login()* function. This **loginToken** will be matched with the *code* that is passed in. 
+
+If the *loginComplete()* is successful it will return to the caller, the login credentials will be saved in member variables of the **CosyncJWTRest** shared object:
 
 * **jwt**: the JWT token of the logged in user
 * **accessToken**: the access token of the logged in user
 
 ```
-    public func loginComplete(
-        _ code: String, 
-        onCompletion completion: @escaping (Error?) -> Void
-        )
+	public func loginComplete(
+		_ code: String
+        ) async throws -> Void
 ```
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
 
 ### Parameters
 
@@ -105,14 +155,89 @@ If the login complete is successful, the **error** parameter on the **completion
 ### Example
 
 ```
-    CosyncJWTRest.shared.loginComplete(code,
-        onCompletion: { (error) in
-        })
+	do {
+		try await CosyncJWTRest.shared.loginComplete(code)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
+```
+
+## loginAnonymous
+
+<img width="900" src="./images/loginAnonymous.svg">
+
+The *loginAnonymous()* function is used to login anonymously to the CosyncJWT system. In order to support this functionality, the developer must enable this feature from within the Cosync portal for a specific application. The advantage of anonymous login is that it does not require a user password, it also bypasses the anonymous login feature of MongoDB AppServices and creates a bonified user within Realm. Practically, this means that the anonymous user does not expire after three months. 
+
+Each anonymous user must be given a unique handle, this is typically an application specific prefix followed by a unique UUID. This handle can be cached locally so that the anonymous user is not recreated everytime the application is activated.
+
+If the login is successful it will return to the caller, the login credentials will be saved in member variables of the **CosyncJWTRest** shared object:
+
+* **jwt**: the JWT token of the logged in user
+* **accessToken**: the access token of the logged in user
+
+```
+	public func loginAnonymous(
+		_ handle: String
+        ) async throws -> Void
+```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+
+### Parameters
+
+**handle** : String - this contains a unique string for the anonymous user (e.g. \<prefix\>_UUID)
+
+### Example
+
+```
+	let uuid = UUID().uuidString
+	do {
+		try await CosyncJWTRest.shared.loginAnonymous("testApp_" + uuid)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
+```
+
+## logout
+
+The *logout()* function is used by the client application to log out of the CosyncJWT server. This function does not actually call the server, rather it erases all the local data associated with the JWT login token. This function should be called when the user logs out.
+
+```
+	public func logout() -> Void
+```
+
+### Parameters
+
+none
+
+### Example
+
+```
+	CosyncJWTRest.shared.logout()
 ```
 
 ## signup
 
-The *signup()* function is used to signup a user with a CosyncJWT application. This function may cause the CosyncJWT service to verify the handle email of the user signing up. This verification is done by either sending a six digit verification code to the handle associated with the user account if the signup flow is `code`, otherwise it sends an email link to the handle that the user can click if the signup flow is `link`. If the signup flow is `none`, no verification of the handle is required. If the signup is successful, the *signup()* function will call a completion function with an **error** parameter set to **nil**.
+The *signup()* function is used to signup a user with a CosyncJWT application. This functional flow of the *signup()* function can go one of three ways, depending on the value of the signup for the application:
+
+- none
+- link
+- code
+
+If the signup flow is **none**, there is no verification of the user handle that is provided. And the flow is as follows:
+
+<img width="900" src="./images/signupNone.svg">
+
+If the signup flow is **link**, a web link is send to the handle (email or phone) to validate the uniqueness and authenticity of the handle. If the user clicks on the link, the handle is considered verified, and a user is created that is associated with the handle. The user must then use the **login()** function to enter the application. 
+
+<img width="900" src="./images/signupLink.svg">
+
+If the signup flow is **code**, a six-digit code is send to the handle (email or phone) to validate the uniqueness and authenticity of the handle. The user can then type in the code and call the function *completeSignup()* to validate the code and verify the authenticity of the user handle. 
+
+<img width="900" src="./images/signup.svg">
+
+This function may cause the CosyncJWT service to verify the handle email of the user signing up. This verification is done by either sending a six digit verification code to the handle associated with the user account if the signup flow is `code`, otherwise it sends an email link to the handle that the user can click if the signup flow is `link`. If the signup flow is `none`, no verification of the handle is required, and no call to the *completeSignup* function is required. 
 
 Metadata associated with the user is passed in as part of the signup process in the **metadata** parameter. The metadata is passed in as JSON dictionary string. The format of the metadata is specified in the Cosync Portal for the specific application in the **JWT** tab under the *Metadata Fields* section. 
 
@@ -120,9 +245,10 @@ Metadata associated with the user is passed in as part of the signup process in 
 	public func signup(
 		_ handle: String, 
 		password: String, 
-		metaData: String?, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		metaData: String?) async throws -> Void
 ```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
 
 ### Parameters
 
@@ -132,21 +258,20 @@ Metadata associated with the user is passed in as part of the signup process in 
 
 **metadata** : String - JSON representation of the metadata.
 
-**onCompletion**: Function - this is called upon completion of the login
-
 ### Example
 
 ```
 	let metaData = "{\"user_data\": {\"name\": {
 		\"first\": \"\(self.firstName)\", 
 		\"last\": \"\(self.lastName)\"}}}"
-		
-	CosyncJWTRest.shared.signup(self.email, 
+
+	do {
+		try await CosyncJWTRest.shared.signup(self.email, 
 					password: self.password, 
-					metaData: metaData, onCompletion: { (err) in
-
-                            })
-
+					metaData: metaData)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## completeSignup
@@ -155,13 +280,13 @@ The *completeSignup()* function is used to complete a signup of a user with a Co
 
 If the call to *completeSignup()* is successful, the function will call a completion function with an **error** parameter set to **nil**.
 
-
 ```
 	public func completeSignup(
 		_ handle: String, 
-		code: String, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		code: String) async throws -> Void
 ```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
 
 ### Parameters
 
@@ -173,29 +298,31 @@ If the call to *completeSignup()* is successful, the function will call a comple
 ### Example
 
 ```
-	CosyncJWTRest.shared.completeSignup(self.email, 
-		code: self.code, 
-		onCompletion: { (err) in
-                            
-                        })
-
+	do {
+		try await CosyncJWTRest.shared.completeSignup(self.email, code: self.code)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## invite
 
-The *invite()* function is used to invite a user email into the CosyncJWT application. It is an alternative onboarding process to the *signup()* function. Invitation is done by the logged in user to another potential user's email. When a user is "invited" into a CosyncJWT application, he/she will receive and email to that effect. Similar the signup process, an invitation can also have attached metadata to it. The invited user email will be sent a six-digit code to validate the email at the time of onboarding during the "register()* function call.
+<img width="900" src="./images/invite.svg">
+
+The *invite()* function is used to invite a user email into the CosyncJWT application. It is an alternative onboarding process to the *signup()* function. Invitation is done by the logged in user to another potential user's email (or phone). When a user is "invited" into a CosyncJWT application, he/she will receive and email to that effect. Similar the signup process, an invitation can also have attached metadata to it. The invited user email will be sent a six-digit code to validate the email at the time of onboarding during the "register()* function call.
 
 Invite metadata associated with the user is passed in as part of the invite process in the **metadata** parameter. The metadata is passed in as JSON dictionary string. The format of the metadata is specified in the Cosync Portal for the specific application in the **JWT** tab under the *Invite Metadata Fields* section. The invite metadata could be used to encode a coupon value for the invited user, or any other data the developer sees fit.
 
-The invitation process will also need to record the unique Realm user id of the inviting user. This is stored within the *senderUserId* parameter of the *invite()* function. 
+The invitation process will also need to record the unique MongoDB App Services user id of the inviting user. This is stored within the *senderUserId* parameter of the *invite()* function. 
 
 ```
 	public func invite(
 		_ handle: String, 
 		metaData: String?, 
-		senderUserId: String?, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		senderUserId: String?) async throws -> Void
 ```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
 
 ### Parameters
 
@@ -203,40 +330,39 @@ The invitation process will also need to record the unique Realm user id of the 
 
 **metadata** : String - JSON representation of the invite metadata.
 
-**senderUserId** : String - Realm user Id of inviting user
-
-**onCompletion**: Function - this is called upon completion of the invite
+**senderUserId** : String - MongoDB App Services user Id of inviting user
 
 ### Example
 
 ```
 	let metaData = "{\"invite_data\": {\"coupon\": \"premium\"}}"
 		
-	CosyncJWTRest.shared.invite(self.email, 
-		metaData: metaData, 
-		senderUserId: RealmManager.shared.app.currentUser?.id,
-		onCompletion: { (err) in
-		...
-    })
+	do {
+		try await CosyncJWTRest.shared.invite(self.email, 
+			metaData: metaData, 
+			senderUserId: RealmManager.shared.app.currentUser?.id)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## register
 
+<img width="900" src="./images/register.svg">
+
 The *register()* function is used to complete the invite of a user with a CosyncJWT application. When an inviting user issues a call to the *invite()* function, the invited user email will be sent an email with a six-digit code associated with the invite. This code is passed by the invited user in the *code* parameter during a call to the *register()* function.
 
 Metadata associated with the invited user is passed in as part of the register process in the **metadata** parameter. The metadata is passed in as JSON dictionary string. This is the invited user's metadata, which is different from the *Invite Metadata* passed in by the inviting user in the *invite(()* function call. The format of the metadata is specified in the Cosync Portal for the specific application in the **JWT** tab under the *Metadata Fields* section. 
-
-If the call to *register()* is successful, the function will call a completion function with an **error** parameter set to **nil**.
-
 
 ```
 	public func register(
 		_ handle: String, 
 		password: String, 
 		metaData: String?, 
-		code: String, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		code: String) async throws -> Void
 ```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
 
 ### Parameters
 
@@ -248,24 +374,21 @@ If the call to *register()* is successful, the function will call a completion f
 
 **code** : String - this contains the six-digit code sent to the user's email
 
-**onCompletion**: Function - this is called upon completion of the register
-
-
 ### Example
 
 ```
 	let metaData = "{\"user_data\": {\"name\": {
 		\"first\": \"\(self.firstName)\", 
 		\"last\": \"\(self.lastName)\"}}}"
-		
-	CosyncJWTRest.shared.register(
-		self.email, 
-		password: self.password, 
-		metaData: metaData, 
-		code: self.inviteCode, onCompletion: { (err) in
-           ...                         
-        })
 
+	do {
+		try await CosyncJWTRest.shared.register(self.email, 
+			password: self.password, 
+			metaData: metaData, 
+			code: self.inviteCode)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## checkPassword
@@ -304,6 +427,7 @@ The *password filtering* parameters are set by the developer in the Cosync Porta
 The *getUser()* function is used by the client application to get information about the currently logged in user to CosyncJWT. The *getUser()* function will save user information inside member variables of the **CosyncJWTRest.shared** object. These member variables include the following information:
 
 * **handle** : String - email handle of user
+* **userName** : String - user name of user
 * **twoFactorPhoneVerification** : Bool - whether phone 2FA is enabled for user
 * **twoFactorGoogleVerification** : Bool - whether google 2FA is enabled for user
 * **appId** : String - CosyncJWT app Id for user
@@ -313,7 +437,7 @@ The *getUser()* function is used by the client application to get information ab
 * **lastLogin** : Date - last login date for user
 
 ```
-	public func getUser(onCompletion completion: @escaping (Error?) -> Void)
+	public func getUser() async throws -> Void
 ```
 
 ### Parameters
@@ -323,10 +447,11 @@ None
 ### Example
 
 ```
-	CosyncJWTRest.shared.getUser(onCompletion: { (error) in
-		...
-	})
-
+	do {
+		try await CosyncJWTRest.shared.getUser()
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## getApplication
@@ -344,7 +469,7 @@ The *getApplication()* function is used by the client application to get informa
 * **appData** : Date - last login date for user
 
 ```
-	public func getApplication(onCompletion completion: @escaping (Error?) -> Void)
+	public func getApplication() async throws -> Void
 ```
 
 ### Parameters
@@ -354,10 +479,11 @@ None
 ### Example
 
 ```
-	CosyncJWTRest.shared.getApplication(onCompletion: { (error) in
-		...
-	})
-
+	do {
+		try await CosyncJWTRest.shared.getApplication()
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## setPhone
@@ -366,8 +492,7 @@ The *setPhone()* function is used by the client application to set the user's ph
 
 ```
 	public func setPhone(
-		_ phoneNumber: String, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		_ phoneNumber: String) async throws -> Void
 ```
 
 ### Parameters
@@ -377,10 +502,11 @@ The *setPhone()* function is used by the client application to set the user's ph
 ### Example
 
 ```
-	CosyncJWTRest.shared.setPhone(phone, onCompletion: { (err) in
-		...
-    })
-
+	do {
+		try await CosyncJWTRest.shared.setPhone(phone)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## verifyPhone
@@ -389,8 +515,7 @@ The *verifyPhone()* function is used by the client application to verify a user'
 
 ```
 	public func verifyPhone(
-		_ code: String, 
-		onCompletion completion: @escaping (Error?)
+		_ code: String) async throws -> Void
 ```
 
 ### Parameters
@@ -400,10 +525,11 @@ The *verifyPhone()* function is used by the client application to verify a user'
 ### Example
 
 ```
-	CosyncJWTRest.shared.verifyPhone(phoneCode, onCompletion: { (err) in
-		...
-    })
-
+	do {
+		try await CosyncJWTRest.shared.verifyPhone(phoneCode)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## setTwoFactorPhoneVerification
@@ -412,8 +538,7 @@ The *setTwoFactorPhoneVerification()* function is used by the client application
 
 ```
 	public func setTwoFactorPhoneVerification(
-		_ twoFactor: Bool, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		_ twoFactor: Bool) async throws -> Void
 ```
 
 ### Parameters
@@ -423,10 +548,11 @@ The *setTwoFactorPhoneVerification()* function is used by the client application
 ### Example
 
 ```
-	CosyncJWTRest.shared.setTwoFactorPhoneVerification(true, onCompletion: { (err) in
-		...
-    })
-
+	do {
+		try await CosyncJWTRest.shared.setTwoFactorPhoneVerification(true)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## setTwoFactorGoogleVerification
@@ -437,8 +563,7 @@ Note: The Google 2FA authentication system is more secure than simple phone 2FA,
 
 ```
 	public func setTwoFactorGoogleVerification(
-		_ twoFactor: Bool, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		_ twoFactor: Bool) async throws -> Void
 ```
 
 ### Parameters
@@ -448,21 +573,20 @@ Note: The Google 2FA authentication system is more secure than simple phone 2FA,
 ### Example
 
 ```
-	CosyncJWTRest.shared.setTwoFactorGoogleVerification(true, onCompletion: { (err) in
-		...
-    })
-
+	do {
+		try await CosyncJWTRest.shared.setTwoFactorGoogleVerification(true)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## forgotPassword
 
 The *forgotPassword()* function is used by the client application to enable a user to reset the password for their account. After calling this function, the user will be sent a reset password email along with a six-digit code to reset their password. The password is reset by calling the *resetPassword()* function. The user does not need to be logged in for this function to work.
 
-
 ```
 	public func forgotPassword(
-		_ handle: String, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		_ handle: String) async throws -> Void
 ```
 
 ### Parameters
@@ -472,11 +596,11 @@ The *forgotPassword()* function is used by the client application to enable a us
 ### Example
 
 ```
-	CosyncJWTRest.shared.forgotPassword(self.email, onCompletion: { (error) in
-    	...                               
-
-    })
-
+	do {
+		try await CosyncJWTRest.shared.forgotPassword(self.email)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## resetPassword
@@ -488,8 +612,7 @@ The *resetPassword()* function is used by the client application to reset the pa
 	public func resetPassword(
 		_ handle: String, 
 		password: String, 
-		code: String, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		code: String) async throws -> Void
 ```
 
 ### Parameters
@@ -502,24 +625,23 @@ The *resetPassword()* function is used by the client application to reset the pa
 ### Example
 
 ```
-	CosyncJWTRest.shared.resetPassword(self.email, 
+	do {
+		try await CosyncJWTRest.shared.resetPassword(self.email,
 			password: self.password, 
-			code: self.code, onCompletion: { (error) in
-            	...
-            })
-
+			code: self.code)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
 ## changePassword
 
 The *changePassword()* function is used by the client application to change the password of the current logged in user. The user must be logged in for this function to work.
 
-
 ```
 	public func changePassword(
 		_ newPassword: String, 
-		password: String, 
-		onCompletion completion: @escaping (Error?) -> Void)
+		password: String) async throws -> Void
 ```
 
 ### Parameters
@@ -530,13 +652,128 @@ The *changePassword()* function is used by the client application to change the 
 ### Example
 
 ```
-	CosyncJWTRest.shared.changePassword(self.newPassword, 
-		password: self.password, onCompletion: { (err) in
-        ...
-    })
-
+	do {
+		try await CosyncJWTRest.shared.changePassword(self.newPassword, 
+			password: self.password)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
 ```
 
+## setUserMetadata
+
+The *setUserMetadata()* function is used by the client application to set the user metadata associated with a user account. This is the metadata that is accessible by MongoDB App Services after the user has logged into Realm. The **metaData** is a string containing JSON data.
+
+```
+	public func setUserMetadata(
+		_ metaData: String) async throws -> Void
+```
+
+### Parameters
+
+**metaData** : String - user meta data in JSON format
+
+### Example
+
+```
+	let metaData = "{\"user_data\": {\"name\": {
+		\"first\": \"\(self.firstName)\", 
+		\"last\": \"\(self.lastName)\"}}}"
+
+	do {
+		try await CosyncJWTRest.shared.setUserMetadata(metaData)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
+```
+
+## deleteAccount
+
+The *deleteAccount()* function is used by the client application to delete a user account. This function will delete the user record associated with the user and free up the handle for a new account *signup()*. If the user account has a user name associatd with it, the *deleteAccount()* function can also be passed in a user name instead of the email or phone handle.
+
+This user must be logged into for this function to work. This function is needed to support the remove account requirement on the Apple iOS Store.
+
+```
+	public func deleteAccount(
+		_ handle: String, 
+		password: String
+        ) async throws -> Void
+```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+### Parameters
+
+**handle** : String - this contains the user's user name, email, or phone. 
+
+**password** : String - this contains the user's password.
+
+### Example
+
+```
+	do {
+		try await CosyncJWTRest.shared.deleteAccount(email, password: password)
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
+```
+
+## setUserName
+
+The *setUserName()* function is used by the client application to set the user name associated with a user account. User names must be unique names that allow the application to identify a user by something other than the email or phone handle. Typically, a user name is selected the first time a user logs in, or after he/she signs up for the first time. 
+
+User names must consist of alphanumeric characters - starting with a letter. They are not case sensitive
+
+```
+	public func setUserName(
+		_ userName: String) async throws -> Void
+```
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+### Parameters
+
+**userName** : String - user name to be associated with logged in user
+
+### Example
+
+```
+	do {
+		try await CosyncJWTRest.shared.setUserName("joesmith")
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
+```
+
+## userNameAvailable
+
+The *userNameAvailable()* function is used by the client application whether a user name is available and unique for the application. User names must be unique names that allow the application to identify a user by something other than the email or phone handle. 
+
+User names must consist of alphanumeric characters - starting with a letter. They are not case sensitive
+
+```
+	public func userNameAvailable(
+		_ userName: String) async throws -> Bool
+```
+This fuction returns **true** if user name is available, **false** otherwise. 
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+### Parameters
+
+**userName** : String - user name to be associated with logged in user
+
+### Example
+
+```
+	do {
+		let isAvailable = try await CosyncJWTRest.shared.userNameAvailable("joesmith")
+		if isAvailable {
+			...
+		}
+	} catch let error as CosyncJWTError {
+		NSLog(@"login error '%@'", error.message)
+	}
+```
 
 
 
