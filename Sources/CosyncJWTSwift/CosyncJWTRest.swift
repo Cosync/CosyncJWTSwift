@@ -956,6 +956,8 @@ public class CosyncJWTRest {
                 
                 if str == "true" {
                     self.twoFactorPhoneVerification = twoFactor
+                    self.googleSecretKey = nil
+                    self.QRDataImage = nil
                 } else {
                     throw CosyncJWTError.internalServerError
                 }
