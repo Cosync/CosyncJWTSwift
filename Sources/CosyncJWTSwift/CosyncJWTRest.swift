@@ -116,7 +116,7 @@ public class CosyncJWTRest {
     @MainActor public func configure(appToken: String, cosyncRestAddress: String = "") {
         self.appToken = appToken
         if cosyncRestAddress == "" {
-            self.cosyncRestAddress = "https://rest.cosync.net"
+            self.cosyncRestAddress = "https://sandbox.cosync.net"
 
         } else {
             self.cosyncRestAddress = cosyncRestAddress
