@@ -76,6 +76,8 @@ The *configure()* function call is used to the CosyncJWTSwift to operate with a 
 
 **cosyncRestAddress** : String - this optional parameter contains the HTTPS REST API address for the CosyncJWT service. The default is 'https://sandbox.cosync.net' if not specified.
 
+**rawPublicKey** : String - this optional parameter contains the raw Publc Key for the Cosync Application. The default is '' if not specified. This is used by the function **isValidJWT**.
+
 For self-hosted versions of the CosyncJWT server, the **cosyncRestAddress** is the HTTPS REST API address of the self-hosted server.
 
 This function does not throw any exceptions.
@@ -83,10 +85,29 @@ This function does not throw any exceptions.
 ### Example
 
 ```
-	CosyncJWTRest.shared.configure(appToken: Constants.APP_TOKEN)
+	CosyncJWTRest.shared.configure(appToken: Constants.APP_TOKEN,
+                          cosyncRestAddress: Constants.COSYNC_REST_ADDRESS,
+                               rawPublicKey: Constants.RAW_PUBLIC_KEY)
 ```
 
 ---
+
+## isValidJWT
+
+The *isValidJWT()* function is used to validate a jwt token after a call to the *login()* function. This function will only work if the **rawPublicKey** has been set as part of the configuration function.
+
+If MongoDB App Services are not being used by the application, this function can verify that the jwt token returned by the *login()* function is valid and comes from the right provider. 
+
+```
+    public func isValidJWT() -> Bool
+```
+
+This function will return `true` if the **jwt** token is valid and signed correctly, `false` otherwise.
+
+
+### Parameters
+
+**none**
 
 ## login
 

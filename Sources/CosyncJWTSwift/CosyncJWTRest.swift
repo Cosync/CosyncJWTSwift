@@ -30,7 +30,6 @@ import CryptoKit
 extension String {
 
     func md5() -> String {
-
         guard let d = self.data(using: .utf8) else { return ""}
         let digest = Insecure.MD5.hash(data: d)
         let h = digest.reduce("") { (res: String, element) in
@@ -40,7 +39,26 @@ extension String {
             return t
         }
         return h
-
+    }
+    
+    func deletingPrefix(_ prefix: String) -> String {
+        guard self.hasPrefix(prefix) else { return self }
+        return String(self.dropFirst(prefix.count))
+    }
+    
+    func deletingSuffix(_ suffix: String) -> String {
+        guard self.hasSuffix(suffix) else { return self }
+        return String(self.dropLast(suffix.count))
+    }
+    
+    func base64StringWithPadding() -> String {
+        var stringTobeEncoded = self.replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        let paddingCount = self.count % 4
+        for _ in 0..<paddingCount {
+            stringTobeEncoded += "="
+        }
+        return stringTobeEncoded
     }
 }
 
@@ -51,7 +69,8 @@ public class CosyncJWTRest {
     // Configuration
     public var appToken: String?
     public var cosyncRestAddress: String?
-        
+    public var rawPublicKey: String?
+
     // Login credentials
     public var jwt: String?
     public var accessToken: String?
@@ -88,7 +107,6 @@ public class CosyncJWTRest {
     var passwordMinDigit: Int?
     var passwordMinSpecial: Int?
     
-    
     static let loginPath = "api/appuser/login"
     static let loginCompletePath = "api/appuser/loginComplete"
     static let loginAnonymousPath = "api/appuser/loginAnonymous"
@@ -113,7 +131,7 @@ public class CosyncJWTRest {
     public static let shared = CosyncJWTRest()
     
     // Configure
-    @MainActor public func configure(appToken: String, cosyncRestAddress: String = "") {
+    @MainActor public func configure(appToken: String, cosyncRestAddress: String = "", rawPublicKey: String = "") {
         self.appToken = appToken
         if cosyncRestAddress == "" {
             self.cosyncRestAddress = "https://sandbox.cosync.net"
@@ -121,6 +139,63 @@ public class CosyncJWTRest {
         } else {
             self.cosyncRestAddress = cosyncRestAddress
         }
+        self.rawPublicKey = rawPublicKey
+    }
+    
+    // isValidJWT - check whether self.jwt is valid and signed correctly
+    // code inspired from Muhammed Tanriverdi see link
+    // https://mtanriverdi.medium.com/how-to-decode-jwt-and-validate-the-signature-in-swift-97092bd654f7
+    //
+    @MainActor public func isValidJWT() -> Bool {
+        
+        if let jwt = self.jwt,
+           let rawPublicKey = self.rawPublicKey,
+           !rawPublicKey.isEmpty {
+            
+            let parts = jwt.components(separatedBy: ".")
+            
+            if parts.count == 3 {
+                
+                let header = parts[0]
+                let payload = parts[1]
+                let signature = parts[2]
+                
+                if let decodedData = Data(base64Encoded: rawPublicKey) {
+                    
+                    if var publicKeyText = String(data: decodedData, encoding: .utf8) {
+                        publicKeyText = publicKeyText.deletingPrefix("-----BEGIN PUBLIC KEY-----")
+                        publicKeyText = publicKeyText.deletingSuffix("-----END PUBLIC KEY-----")
+                        publicKeyText = String(publicKeyText.filter { !" \n\t\r".contains($0) })
+                        
+                        if let dataPublicKey = Data(base64Encoded: publicKeyText) {
+                            
+                            let publicKey: SecKey? = SecKeyCreateWithData(dataPublicKey as NSData, [
+                                kSecAttrKeyType: kSecAttrKeyTypeRSA,
+                                kSecAttrKeyClass: kSecAttrKeyClassPublic
+                            ] as NSDictionary, nil)
+                            
+                            if let publicKey = publicKey {
+                                let algorithm: SecKeyAlgorithm = .rsaSignatureMessagePKCS1v15SHA256
+                                
+                                let dataSigned = (header + "." + payload).data(using: .ascii)!
+                                
+                                let dataSignature = Data.init(
+                                    base64Encoded: signature.base64StringWithPadding()
+                                )!
+
+                                return SecKeyVerifySignature(publicKey,
+                                                                   algorithm,
+                                                                   dataSigned as NSData,
+                                                                   dataSignature as NSData,
+                                                                   nil)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return false
     }
     
     // Login into CosyncJWT
@@ -683,8 +758,6 @@ public class CosyncJWTRest {
             guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
                 throw CosyncJWTError.internalServerError
             }
-            print("CosyncJWTTest: getUser result: ")
-            print(json)
             
             if let handle = json["handle"] as? String {
                 self.handle = handle
@@ -1150,8 +1223,6 @@ public class CosyncJWTRest {
             guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
                 throw CosyncJWTError.internalServerError
             }
-            
-            print(json)
             
             if let name = json["name"] as? String {
                 self.appName = name
