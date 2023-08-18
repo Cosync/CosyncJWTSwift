@@ -385,8 +385,8 @@ Metadata associated with the invited user is passed in as part of the register p
 		_ handle: String, 
 		password: String, 
 		metaData: String?,
-        locale: String?,      
-		code: String) async throws -> Void
+		code: String,
+        locale: String?) async throws -> Void
 ```
 
 If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.

@@ -520,7 +520,7 @@ public class CosyncJWTRest {
     }
 
     // register into CosyncJWT
-    @MainActor public func register(_ handle: String, password: String, metaData: String?, locale: String?, code: String)  async throws -> Void {
+    @MainActor public func register(_ handle: String, password: String, metaData: String?, code: String, locale: String?)  async throws -> Void {
         
         self.jwt = nil
         self.accessToken = nil
