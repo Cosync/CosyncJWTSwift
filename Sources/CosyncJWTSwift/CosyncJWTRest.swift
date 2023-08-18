@@ -418,7 +418,7 @@ public class CosyncJWTRest {
     }
 
     // Singup into CosyncJWT
-    @MainActor public func signup(_ handle: String, password: String, metaData: String?, locale: String?) async throws -> Void {
+    @MainActor public func signup(_ handle: String, password: String, metaData: String?, locale: String? = nil) async throws -> Void {
         
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -520,7 +520,7 @@ public class CosyncJWTRest {
     }
 
     // register into CosyncJWT
-    @MainActor public func register(_ handle: String, password: String, metaData: String?, code: String, locale: String?)  async throws -> Void {
+    @MainActor public func register(_ handle: String, password: String, metaData: String?, code: String, locale: String? = nil)  async throws -> Void {
         
         self.jwt = nil
         self.accessToken = nil
