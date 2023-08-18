@@ -54,6 +54,7 @@ The **CosyncJWTError** class includes the following enumerations:
 - appIsNotSupporUserName
 - userNameDoesNotExist
 - accountIsNotVerify
+- invalidLocale
 - invalidPassword
 
 # Function API
@@ -266,7 +267,8 @@ Metadata associated with the user is passed in as part of the signup process in 
 	public func signup(
 		_ handle: String, 
 		password: String, 
-		metaData: String?) async throws -> Void
+		metaData: String?,
+        locale: String?) async throws -> Void
 ```
 
 If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
@@ -278,6 +280,9 @@ If an error occurs in the call to the function, a CosyncJWTError exceptions will
 **password** : String - this contains the user's password.
 
 **metadata** : String - JSON representation of the metadata.
+
+**locale** : String - 2 letter **locale** for the user
+
 
 ### Example
 
@@ -379,7 +384,8 @@ Metadata associated with the invited user is passed in as part of the register p
 	public func register(
 		_ handle: String, 
 		password: String, 
-		metaData: String?, 
+		metaData: String?,
+        locale: String?,      
 		code: String) async throws -> Void
 ```
 
@@ -392,6 +398,8 @@ If an error occurs in the call to the function, a CosyncJWTError exceptions will
 **password** : String - this contains the user's password.
 
 **metadata** : String - JSON representation of the metadata.
+
+**locale** : String - 2 letter **locale** for the user
 
 **code** : String - this contains the six-digit code sent to the user's email
 
@@ -455,6 +463,7 @@ The *getUser()* function is used by the client application to get information ab
 * **phone** : String - phone number for user in E. 164 format
 * **phoneVerified** : Bool - whether user phone number has been verified
 * **metaData** : String - JSON string of user metadata
+* **locale** : String - user locale, e.g. 'FR'
 * **lastLogin** : Date - last login date for user
 
 ```
@@ -739,6 +748,29 @@ If an error occurs in the call to the function, a CosyncJWTError exceptions will
 	}
 ```
 
+## setLocale
+
+The *setLocale()* function is used by the client application to set the user's **locale**. The locale is a two letter code that identifies the user's locale - by default the locale is 'EN' for English. The Cosync JWT authentication system supports the ISO 631–1 codes that are described [ISO 639–1 codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes). Note: a client can only set the locale for a user if that locale is supported by the application in the Cosync Portal.
+
+```
+    public func setLocale(
+        _ locale: String) async throws -> Void
+```
+
+### Parameters
+
+**locale** : String - contains the user's locale (always uppercase)
+
+### Example
+
+```
+    do {
+        try await CosyncJWTRest.shared.setLocale(locale)
+    } catch let error as CosyncJWTError {
+        NSLog(@"login error '%@'", error.message)
+    }
+```
+
 ## setUserName
 
 The *setUserName()* function is used by the client application to set the user name associated with a user account. User names must be unique names that allow the application to identify a user by something other than the email or phone handle. Typically, a user name is selected the first time a user logs in, or after he/she signs up for the first time. 
@@ -796,6 +828,28 @@ If an error occurs in the call to the function, a CosyncJWTError exceptions will
 	}
 ```
 
+## setLocale
 
+The *setLocale()* function is used by the client application to set the locale associated with a user account. The specified locale must be supported by the application. A user locale is a two lette code (e.g. 'FR' - for French) that identifies the user locale.
+
+```
+    public func setLocale(
+        _ locale: String) async throws -> Void
+```
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+### Parameters
+
+**locale** : String - locale to be associated with logged in user
+
+### Example
+
+```
+    do {
+        try await CosyncJWTRest.shared.setLocale("FR")
+    } catch let error as CosyncJWTError {
+        NSLog(@"login error '%@'", error.message)
+    }
+```
 
 

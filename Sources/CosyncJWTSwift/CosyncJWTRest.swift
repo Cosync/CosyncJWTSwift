@@ -83,6 +83,7 @@ public class CosyncJWTRest {
     public var status: String?                      // 'active', or 'suspend'
     public var handle: String?                      // user email or phone
     public var userName: String?                    // user name to login
+    public var locale: String?                      // user locale
     public var twoFactorPhoneVerification: Bool?    // user 2-factor phone verification enabled
     public var twoFactorGoogleVerification: Bool?   // user 2-factor google verification enabled
     public var appId: String?                       // CosyncJWT app id
@@ -127,7 +128,8 @@ public class CosyncJWTRest {
     static let invitePath = "api/appuser/invite"
     static let registerPath = "api/appuser/register"
     static let deleteAccountPath = "api/appuser/deleteAccount"
-    
+    static let setLocalePath = "api/appuser/setLocale"
+
     public static let shared = CosyncJWTRest()
     
     // Configure
@@ -416,7 +418,7 @@ public class CosyncJWTRest {
     }
 
     // Singup into CosyncJWT
-    @MainActor public func signup(_ handle: String, password: String, metaData: String?) async throws -> Void {
+    @MainActor public func signup(_ handle: String, password: String, metaData: String?, locale: String?) async throws -> Void {
         
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -442,14 +444,29 @@ public class CosyncJWTRest {
             // your post request data
             let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
             var requestBodyComponents = URLComponents()
-            if let metaData = metaData {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
-                                                    URLQueryItem(name: "password", value: password.md5()),
-                                                    URLQueryItem(name: "metaData", value: metaData)]
+            
+            if let locale = locale {
+                if let metaData = metaData {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle",       value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "metaData", value: metaData),
+                                                        URLQueryItem(name: "locale", value: locale)]
 
+                } else {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "locale", value: locale)]
+                }
             } else {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
-                                                    URLQueryItem(name: "password", value: password.md5())]
+                if let metaData = metaData {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "metaData", value: metaData)]
+
+                } else {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5())]
+                }
             }
             
             urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
@@ -503,7 +520,7 @@ public class CosyncJWTRest {
     }
 
     // register into CosyncJWT
-    @MainActor public func register(_ handle: String, password: String, metaData: String?, code: String)  async throws -> Void {
+    @MainActor public func register(_ handle: String, password: String, metaData: String?, locale: String?, code: String)  async throws -> Void {
         
         self.jwt = nil
         self.accessToken = nil
@@ -533,16 +550,32 @@ public class CosyncJWTRest {
             // your post request data
             var requestBodyComponents = URLComponents()
             let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
-            if let metaData = metaData {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
-                                                    URLQueryItem(name: "password", value: password.md5()),
-                                                    URLQueryItem(name: "code", value: code),
-                                                    URLQueryItem(name: "metaData", value: metaData)]
+            if let locale = locale {
+                if let metaData = metaData {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "code", value: code),
+                                                        URLQueryItem(name: "metaData", value: metaData),
+                                                        URLQueryItem(name: "locale", value: locale)]
 
+                } else {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "code", value: code),
+                                                        URLQueryItem(name: "locale", value: locale)]
+                }
             } else {
-                requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
-                                                    URLQueryItem(name: "password", value: password.md5()),
-                                                    URLQueryItem(name: "code", value: code)]
+                if let metaData = metaData {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "code", value: code),
+                                                        URLQueryItem(name: "metaData", value: metaData)]
+
+                } else {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                        URLQueryItem(name: "password", value: password.md5()),
+                                                        URLQueryItem(name: "code", value: code)]
+                }
             }
             
             urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
@@ -723,6 +756,7 @@ public class CosyncJWTRest {
         
         self.handle = nil
         self.userName = nil
+        self.locale = nil
         self.twoFactorPhoneVerification = nil
         self.twoFactorGoogleVerification = nil
         self.appId = nil
@@ -765,6 +799,10 @@ public class CosyncJWTRest {
             
             if let userName = json["userName"] as? String {
                 self.userName = userName
+            }
+            
+            if let locale = json["locale"] as? String {
+                self.locale = locale
             }
             
             if let twoFactorPhoneVerification = json["twoFactorPhoneVerification"] as? Bool {
@@ -1375,6 +1413,58 @@ public class CosyncJWTRest {
         catch {
            throw CosyncJWTError.internalServerError
         }
+    }
+    
+    // Set the locale for the current user from CosyncJWT
+    @MainActor public func setLocale(_ locale: String) async throws -> Void {
+        
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let accessToken = self.accessToken else {
+            throw CosyncJWTError.internalServerError
+        }
+
+        let config = URLSessionConfiguration.default
+        config.httpAdditionalHeaders = ["access-token": accessToken]
+
+        let session = URLSession(configuration: config)
+        
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.setLocalePath)")!
+        var urlRequest = URLRequest(url: url)
+        
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+
+        // your post request data
+        var requestBodyComponents = URLComponents()
+        
+        requestBodyComponents.queryItems = [URLQueryItem(name: "locale", value: locale)]
+
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            let str = String(decoding: data, as: UTF8.self)
+            
+            if str == "true" {
+                self.locale = locale
+            } else {
+                throw CosyncJWTError.internalServerError
+            }
+        }
+        catch let error as CosyncJWTError {
+            throw error
+        }
+        catch {
+            throw CosyncJWTError.internalServerError
+        }
+        
     }
     
     // Set user meta-data CosyncJWT

@@ -52,6 +52,7 @@ public enum CosyncJWTError: Error {
     case appIsNotSupporUserName         // 606
     case userNameDoesNotExist           // 607
     case accountIsNotVerify             // 608
+    case invalidLocale                  // 609
     case invalidPassword
     
     public var message: String {
@@ -110,6 +111,8 @@ public enum CosyncJWTError: Error {
             return "user name deos not exist"
         case .accountIsNotVerify:
             return "account has not been verified"
+        case .invalidLocale:
+            return "invalid locale"
         }
     }
     
@@ -174,7 +177,9 @@ public enum CosyncJWTError: Error {
                             throw CosyncJWTError.userNameDoesNotExist
                         case 608:
                             throw CosyncJWTError.accountIsNotVerify
-                            
+                        case 609:
+                            throw CosyncJWTError.invalidLocale
+
                         default:
                             throw CosyncJWTError.internalServerError
                         }
