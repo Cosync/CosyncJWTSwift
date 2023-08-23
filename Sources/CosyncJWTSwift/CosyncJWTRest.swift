@@ -96,6 +96,7 @@ public class CosyncJWTRest {
 
     // application data
     public var appData: [String:Any]?
+    public var locales: [String]?
     public var signupFlow: String?
     public var appName: String?
     public var twoFactorVerification: String?
@@ -1299,6 +1300,10 @@ public class CosyncJWTRest {
 
             if let appData = json["appData"] as? [String: Any] {
                 self.appData = appData
+            }
+            
+            if let locales = json["locales"] as? [String] {
+                self.locales = locales
             }
 
         }
