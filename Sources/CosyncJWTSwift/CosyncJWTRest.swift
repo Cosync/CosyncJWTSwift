@@ -1263,8 +1263,6 @@ public class CosyncJWTRest {
                 throw CosyncJWTError.internalServerError
             }
             
-            print(json)
-            
             if let name = json["name"] as? String {
                 self.appName = name
             }
@@ -1304,8 +1302,13 @@ public class CosyncJWTRest {
                 self.appData = appData
             }
             
-            if let locales = json["locales"] as? [String] {
-                self.locales = locales
+            if let locales = json["locales"] as? NSArray {
+                self.locales = [String]()
+                for locale in locales {
+                    if let str = locale as? String {
+                        self.locales?.append(str)
+                    }
+                }
             }
 
         }
