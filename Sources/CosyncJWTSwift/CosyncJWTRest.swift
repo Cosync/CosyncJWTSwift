@@ -1263,6 +1263,8 @@ public class CosyncJWTRest {
                 throw CosyncJWTError.internalServerError
             }
             
+            print(json)
+            
             if let name = json["name"] as? String {
                 self.appName = name
             }
