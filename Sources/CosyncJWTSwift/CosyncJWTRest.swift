@@ -1230,10 +1230,6 @@ public class CosyncJWTRest {
     }
     
     @MainActor public func getApplication() async throws -> Void {
-        
-        self.jwt = nil
-        self.accessToken = nil
-        self.loginToken = nil
 
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
