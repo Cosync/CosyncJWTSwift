@@ -414,8 +414,18 @@ public class CosyncJWTRest {
         self.jwt = nil
         self.accessToken = nil
         self.handle = nil
+        self.userName = nil
+        self.locale = nil
+        self.twoFactorPhoneVerification = false
+        self.twoFactorGoogleVerification = false
+        self.phoneVerified = false
+        self.phone = nil 
+        self.loginToken = nil
+        self.signedUserToken = nil
         self.metaData = nil
         self.lastLogin = nil
+        self.googleSecretKey = nil
+        self.QRDataImage = nil
     }
 
     // Singup into CosyncJWT
