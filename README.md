@@ -48,7 +48,7 @@ The **CosyncJWTError** class includes the following enumerations:
 - invalidLoginCredentials
 - handleAlreadyRegistered
 - invalidData
-- emailDoesNotExist
+- accountDoesNotExist
 - invalidMetaData
 - userNameAlreadyInUse
 - appIsNotSupporUserName

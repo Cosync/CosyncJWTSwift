@@ -130,7 +130,11 @@ public class CosyncJWTRest {
     static let registerPath = "api/appuser/register"
     static let deleteAccountPath = "api/appuser/deleteAccount"
     static let setLocalePath = "api/appuser/setLocale"
-
+    static let appleLoginPath = "api/appuser/appleLogin"
+    static let appleSignupPath = "api/appuser/appleSignup"
+    static let googleLoginPath = "api/appuser/googleLogin"
+    static let googleSignupPath = "api/appuser/googleSignup"
+    
     public static let shared = CosyncJWTRest()
     
     // Configure
@@ -1626,6 +1630,168 @@ public class CosyncJWTRest {
         }
 
     }
+    
+    
+    
+    // Login into CosyncJWT
+    @MainActor public func socialLogin(_ token: String, provider: String) async throws -> Void {
+        
+        self.jwt = nil
+        self.accessToken = nil
+        self.loginToken = nil
+
+        guard let appToken = self.appToken else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        try await CosyncJWTRest.shared.getApplication()
+        
+        let config = URLSessionConfiguration.default
+
+        let session = URLSession(configuration: config)
+        
+        let url = URL(string: "\(cosyncRestAddress)/\(provider == "apple" ? CosyncJWTRest.appleLoginPath : CosyncJWTRest.googleLoginPath)")!
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.allHTTPHeaderFields = ["app-token": appToken]
+       
+        
+        var requestBodyComponents = URLComponents()
+        requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token)]
+        
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+        
+        do {
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            // ensure there is no error for this HTTP response
+            try CosyncJWTError.checkResponse(data: data, response: response)
+            
+            // deserialise the data / NSData object into Dictionary [String : Any]
+            guard let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                throw CosyncJWTError.internalServerError
+            }
+            
+            if let jwt = json["jwt"] as? String,
+               let accessToken = json["access-token"] as? String {
+                
+                self.jwt = jwt
+                self.accessToken = accessToken
+
+            } else {
+                throw CosyncJWTError.internalServerError
+            }
+        }
+        catch let error as CosyncJWTError {
+             throw error
+        }
+        catch {
+            throw CosyncJWTError.internalServerError
+        }
+
+
+    }
+    
+    
+    
+    // Singup into CosyncJWT with Apple
+    @MainActor public func socailSignup(_ token: String, provider:String, metaData: String?, locale: String? = nil) async throws -> Void {
+        
+        guard let appToken = self.appToken else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+        
+        guard let cosyncRestAddress = self.cosyncRestAddress else {
+            throw CosyncJWTError.cosyncJWTConfiguration
+        }
+
+        try await CosyncJWTRest.shared.getApplication()
+
+        
+            
+            let config = URLSessionConfiguration.default
+
+            let session = URLSession(configuration: config)
+            
+        let url = URL(string: "\(cosyncRestAddress)/\(provider == "apple" ? CosyncJWTRest.appleSignupPath : CosyncJWTRest.googleSignupPath)")!
+            var urlRequest = URLRequest(url: url)
+            urlRequest.httpMethod = "POST"
+            urlRequest.allHTTPHeaderFields = ["app-token": appToken]
+
+          
+            var requestBodyComponents = URLComponents()
+            
+            if let locale = locale {
+                if let metaData = metaData {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "metaData", value: metaData),
+                                                        URLQueryItem(name: "locale", value: locale)]
+
+                } else {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "locale", value: locale)]
+                }
+            } else {
+                if let metaData = metaData {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "metaData", value: metaData)]
+                } else {
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token)]
+                }
+            }
+            
+            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+            
+            do {
+                let (data, response) = try await session.data(for: urlRequest)
+                
+                // ensure there is no error for this HTTP response
+                try CosyncJWTError.checkResponse(data: data, response: response)
+                
+                let str = String(decoding: data, as: UTF8.self)
+                
+                if str != "true" && self.signupFlow != "none" {
+                    throw CosyncJWTError.internalServerError
+                }
+                else if self.signupFlow == "none"{
+                    
+                    let result = Data(str.utf8)
+                    
+                    guard let json = (try? JSONSerialization.jsonObject(with: result, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
+                        throw CosyncJWTError.internalServerError
+                    }
+                    
+                    
+                    if let jwt = json["jwt"] as? String,
+                       let accessToken = json["access-token"] as? String {
+                        
+                        self.jwt = jwt
+                        self.accessToken = accessToken
+
+                    }
+                    else {
+                        throw CosyncJWTError.internalServerError
+                    }
+                }
+                
+            }
+            catch let error as CosyncJWTError {
+                throw error
+            }
+            catch {
+                throw CosyncJWTError.internalServerError
+            }
+
+
+            
+        
+
+    }
+    
     
 
 }

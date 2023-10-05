@@ -42,17 +42,23 @@ public enum CosyncJWTError: Error {
     case phoneNumberInUse               // 412
     case appIsMirgrated                 // 413
     case anonymousLoginNotSupported     // 414
+    case appleLoginNotSupported         // 415
+    case googleLoginNotSupported        // 416
     case internalServerError            // 500
     case invalidLoginCredentials        // 600
     case handleAlreadyRegistered        // 601
     case invalidData                    // 602
-    case emailDoesNotExist              // 603
+    case accountDoesNotExist            // 603
     case invalidMetaData                // 604
     case userNameAlreadyInUse           // 605
     case appIsNotSupporUserName         // 606
     case userNameDoesNotExist           // 607
     case accountIsNotVerify             // 608
     case invalidLocale                  // 609
+    case emailAccountExists             // 610
+    case appleAccountExists             // 611
+    case googleAccountExists            // 612
+    case invalidToken                   // 613
     case invalidPassword
     
     public var message: String {
@@ -93,8 +99,8 @@ public enum CosyncJWTError: Error {
             return "handle already registered"
         case .invalidData:
             return "invalid data"
-        case .emailDoesNotExist:
-            return "email does not exist"
+        case .accountDoesNotExist:
+            return "account does not exist"
         case .invalidMetaData:
             return "invalid metadata"
         case .invalidPassword:
@@ -113,6 +119,18 @@ public enum CosyncJWTError: Error {
             return "account has not been verified"
         case .invalidLocale:
             return "invalid locale"
+        case .appleLoginNotSupported:
+            return "app does not support Apple Authentication"
+        case .googleLoginNotSupported:
+            return "app does not support Goole Authentication"
+        case .emailAccountExists:
+            return "email account already exist"
+        case .appleAccountExists:
+            return "apple account already exist"
+        case .googleAccountExists:
+            return "google account already exist"
+        case .invalidToken:
+            return "token in invalid"
         }
     }
     
@@ -157,6 +175,10 @@ public enum CosyncJWTError: Error {
                             throw CosyncJWTError.appIsMirgrated
                         case 414:
                             throw CosyncJWTError.anonymousLoginNotSupported
+                        case 415:
+                            throw CosyncJWTError.appleLoginNotSupported
+                        case 416:
+                            throw CosyncJWTError.googleLoginNotSupported
                         case 500:
                             throw CosyncJWTError.internalServerError
                         case 600:
@@ -166,7 +188,7 @@ public enum CosyncJWTError: Error {
                         case 602:
                             throw CosyncJWTError.invalidData
                         case 603:
-                            throw CosyncJWTError.emailDoesNotExist
+                            throw CosyncJWTError.accountDoesNotExist
                         case 604:
                             throw CosyncJWTError.invalidMetaData
                         case 605:
@@ -179,6 +201,14 @@ public enum CosyncJWTError: Error {
                             throw CosyncJWTError.accountIsNotVerify
                         case 609:
                             throw CosyncJWTError.invalidLocale
+                        case 610:
+                            throw CosyncJWTError.emailAccountExists
+                        case 611:
+                            throw CosyncJWTError.appleAccountExists
+                        case 612:
+                            throw CosyncJWTError.googleAccountExists
+                        case 613:
+                            throw CosyncJWTError.invalidToken
 
                         default:
                             throw CosyncJWTError.internalServerError
