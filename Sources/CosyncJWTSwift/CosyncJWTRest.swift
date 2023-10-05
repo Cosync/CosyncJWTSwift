@@ -1699,7 +1699,7 @@ public class CosyncJWTRest {
     
     
     // Singup into CosyncJWT with Apple
-    @MainActor public func socailSignup(_ token: String, provider:String, metaData: String?, locale: String? = nil) async throws -> Void {
+    @MainActor public func socailSignup(_ token: String, email:String, provider:String, metaData: String?, locale: String? = nil) async throws -> Void {
         
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -1728,19 +1728,23 @@ public class CosyncJWTRest {
             if let locale = locale {
                 if let metaData = metaData {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "email", value: token),
                                                         URLQueryItem(name: "metaData", value: metaData),
                                                         URLQueryItem(name: "locale", value: locale)]
 
                 } else {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "email", value: token),
                                                         URLQueryItem(name: "locale", value: locale)]
                 }
             } else {
                 if let metaData = metaData {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "email", value: token),
                                                         URLQueryItem(name: "metaData", value: metaData)]
                 } else {
-                    requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token)]
+                    requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "email", value: token)]
                 }
             }
             
