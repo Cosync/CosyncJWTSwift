@@ -1728,23 +1728,23 @@ public class CosyncJWTRest {
             if let locale = locale {
                 if let metaData = metaData {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
-                                                        URLQueryItem(name: "email", value: token),
+                                                        URLQueryItem(name: "handle", value: token),
                                                         URLQueryItem(name: "metaData", value: metaData),
                                                         URLQueryItem(name: "locale", value: locale)]
 
                 } else {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
-                                                        URLQueryItem(name: "email", value: token),
+                                                        URLQueryItem(name: "handle", value: token),
                                                         URLQueryItem(name: "locale", value: locale)]
                 }
             } else {
                 if let metaData = metaData {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
-                                                        URLQueryItem(name: "email", value: token),
+                                                        URLQueryItem(name: "handle", value: token),
                                                         URLQueryItem(name: "metaData", value: metaData)]
                 } else {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
-                                                        URLQueryItem(name: "email", value: token)]
+                                                        URLQueryItem(name: "handle", value: token)]
                 }
             }
             
