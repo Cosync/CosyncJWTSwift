@@ -101,6 +101,8 @@ public class CosyncJWTRest {
     public var appName: String?
     public var twoFactorVerification: String?
     public var userNamesEnabled:Bool?
+    public var googleLoginEnabled:Bool?
+    public var appleLoginEnabled:Bool?
     public var anonymousLoginEnabled: Bool?
     var passwordFilter: Bool?
     var passwordMinLength: Int?
@@ -1284,6 +1286,13 @@ public class CosyncJWTRest {
             }
             if let userNamesEnabled = json["userNamesEnabled"] as? Bool {
                 self.userNamesEnabled = userNamesEnabled
+            }
+            if let googleLogin = json["googleLoginEnabled"] as? Bool {
+                self.googleLoginEnabled = googleLogin
+            }
+            
+            if let appleLogin = json["appleLoginEnabled"] as? Bool {
+                self.appleLoginEnabled = appleLogin
             }
             
             if let twoFactorVerification = json["twoFactorVerification"] as? String {
