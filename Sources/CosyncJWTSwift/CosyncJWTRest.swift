@@ -1708,7 +1708,7 @@ public class CosyncJWTRest {
     
     
     // Singup into CosyncJWT with Apple
-    @MainActor public func socailSignup(_ token: String, email:String, provider:String, metaData: String?, locale: String? = nil) async throws -> Void {
+    @MainActor public func socialSignup(_ token: String, email:String, provider:String, metaData: String?, locale: String? = nil) async throws -> Void {
         
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -1767,29 +1767,24 @@ public class CosyncJWTRest {
                 
                 let str = String(decoding: data, as: UTF8.self)
                 
-                if str != "true" && self.signupFlow != "none" {
+                let result = Data(str.utf8)
+                
+                guard let json = (try? JSONSerialization.jsonObject(with: result, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
                     throw CosyncJWTError.internalServerError
                 }
-                else if self.signupFlow == "none"{
+                
+                
+                if let jwt = json["jwt"] as? String,
+                   let accessToken = json["access-token"] as? String {
                     
-                    let result = Data(str.utf8)
-                    
-                    guard let json = (try? JSONSerialization.jsonObject(with: result, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] else {
-                        throw CosyncJWTError.internalServerError
-                    }
-                    
-                    
-                    if let jwt = json["jwt"] as? String,
-                       let accessToken = json["access-token"] as? String {
-                        
-                        self.jwt = jwt
-                        self.accessToken = accessToken
+                    self.jwt = jwt
+                    self.accessToken = accessToken
 
-                    }
-                    else {
-                        throw CosyncJWTError.internalServerError
-                    }
                 }
+                else {
+                    throw CosyncJWTError.internalServerError
+                }
+                 
                 
             }
             catch let error as CosyncJWTError {
