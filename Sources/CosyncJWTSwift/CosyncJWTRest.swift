@@ -1429,8 +1429,8 @@ public class CosyncJWTRest {
                                                 URLQueryItem(name: "password", value: password.md5())]
             
         }
-        else if let idToken = token, let provider = provider {
-            requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: idToken),
+        else if token != nil {
+            requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
                                                 URLQueryItem(name: "provider", value: provider)]
         }
         else {
