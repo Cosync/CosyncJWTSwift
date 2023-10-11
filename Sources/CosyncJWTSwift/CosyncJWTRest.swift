@@ -1401,7 +1401,7 @@ public class CosyncJWTRest {
     }
     
     // Delete App User Account from CosyncJWT
-    @MainActor public func deleteAccount(_ handle: String?, password: String?, token:String?, provider:String?) async throws -> Void {
+    @MainActor public func deleteAccount(_ handle: String?, password: String?, token:String?, loginProvider:String?) async throws -> Void {
 
         guard let cosyncRestAddress = self.cosyncRestAddress else {
            throw CosyncJWTError.cosyncJWTConfiguration
@@ -1431,7 +1431,7 @@ public class CosyncJWTRest {
         }
         else if token != nil {
             requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
-                                                URLQueryItem(name: "provider", value: provider)]
+                                                URLQueryItem(name: "loginProvider", value: loginProvider)]
         }
         else {
             throw CosyncJWTError.invalidData
