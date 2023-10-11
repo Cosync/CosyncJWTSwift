@@ -1401,14 +1401,14 @@ public class CosyncJWTRest {
     }
     
     // Delete App User Account from CosyncJWT
-    @MainActor public func deleteAccount(_ handle: String, password: String) async throws -> Void {
+    @MainActor public func deleteAccount(_ handle: String?, password: String?, token:String?, provider:String?) async throws -> Void {
 
         guard let cosyncRestAddress = self.cosyncRestAddress else {
            throw CosyncJWTError.cosyncJWTConfiguration
         }
 
         guard let accessToken = self.accessToken else {
-           throw CosyncJWTError.internalServerError
+           throw CosyncJWTError.invalidAccessToken
         }
 
         let config = URLSessionConfiguration.default
@@ -1419,14 +1419,23 @@ public class CosyncJWTRest {
         urlRequest.httpMethod = "POST"
         urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
 
-        // your post request data
         var requestBodyComponents = URLComponents()
-        let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
-
-        requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
-                                               URLQueryItem(name: "password", value: password.md5())]
-
-
+        if let handle = handle, let password = password {
+            // your post request data
+           
+            let moddedEmail = handle.replacingOccurrences(of: "+", with: "%2B")
+            
+            requestBodyComponents.queryItems = [URLQueryItem(name: "handle", value: moddedEmail),
+                                                URLQueryItem(name: "password", value: password.md5())]
+            
+        }
+        else if let token = token, let provider = provider {
+            requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                URLQueryItem(name: "provider", value: provider)]
+        }
+        else {
+            throw CosyncJWTError.invalidData
+        }
 
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
 
@@ -1458,7 +1467,7 @@ public class CosyncJWTRest {
         }
         
         guard let accessToken = self.accessToken else {
-            throw CosyncJWTError.internalServerError
+            throw CosyncJWTError.invalidAccessToken
         }
 
         let config = URLSessionConfiguration.default
