@@ -82,6 +82,7 @@ public class CosyncJWTRest {
     // Logged in user data
     public var status: String?                      // 'active', or 'suspend'
     public var handle: String?                      // user email or phone
+    public var loginProvider: String?               // user login auth email, google, apple
     public var userName: String?                    // user name to login
     public var locale: String?                      // user locale
     public var twoFactorPhoneVerification: Bool?    // user 2-factor phone verification enabled
@@ -781,6 +782,7 @@ public class CosyncJWTRest {
         self.phoneVerified = nil
         self.metaData = nil
         self.lastLogin = nil
+        self.loginProvider = nil
         
         guard let cosyncRestAddress = self.cosyncRestAddress else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -812,6 +814,10 @@ public class CosyncJWTRest {
             
             if let handle = json["handle"] as? String {
                 self.handle = handle
+            }
+            
+            if let loginProvider = json["loginProvider"] as? String {
+                self.loginProvider = loginProvider
             }
             
             if let userName = json["userName"] as? String {
