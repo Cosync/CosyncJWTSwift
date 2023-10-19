@@ -32,9 +32,9 @@ import GoogleSignIn
 public class CosyncGoogleAuth: ObservableObject {
     
     
-    @Published var isLoggedIn: Bool = false
-    @Published var errorMessage: String = ""
-    @Published var idToken: String = ""
+    @Published public var isLoggedIn: Bool = false
+    @Published public var errorMessage: String = ""
+    @Published public var idToken: String = ""
     
     public var googleClientID: String 
     public var givenName: String = ""
