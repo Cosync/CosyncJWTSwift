@@ -133,10 +133,9 @@ public class CosyncJWTRest {
     static let registerPath = "api/appuser/register"
     static let deleteAccountPath = "api/appuser/deleteAccount"
     static let setLocalePath = "api/appuser/setLocale"
-    static let appleLoginPath = "api/appuser/appleLogin"
-    static let appleSignupPath = "api/appuser/appleSignup"
-    static let googleLoginPath = "api/appuser/googleLogin"
-    static let googleSignupPath = "api/appuser/googleSignup"
+    static let socialLoginPath = "api/appuser/socialLogin"
+    static let socialSignupPath = "api/appuser/socialSignup"
+    
     
     public static let shared = CosyncJWTRest()
     
@@ -1677,14 +1676,15 @@ public class CosyncJWTRest {
 
         let session = URLSession(configuration: config)
         
-        let url = URL(string: "\(cosyncRestAddress)/\(provider == "apple" ? CosyncJWTRest.appleLoginPath : CosyncJWTRest.googleLoginPath)")!
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.socialLoginPath)")!
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.allHTTPHeaderFields = ["app-token": appToken]
        
         
         var requestBodyComponents = URLComponents()
-        requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token)]
+        requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                            URLQueryItem(name: "provider", value: provider)]
         
         urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
         
@@ -1740,7 +1740,7 @@ public class CosyncJWTRest {
 
             let session = URLSession(configuration: config)
             
-        let url = URL(string: "\(cosyncRestAddress)/\(provider == "apple" ? CosyncJWTRest.appleSignupPath : CosyncJWTRest.googleSignupPath)")!
+        let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.socialSignupPath)")!
             var urlRequest = URLRequest(url: url)
             urlRequest.httpMethod = "POST"
             urlRequest.allHTTPHeaderFields = ["app-token": appToken]
@@ -1752,21 +1752,25 @@ public class CosyncJWTRest {
                 if let metaData = metaData {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
                                                         URLQueryItem(name: "handle", value: email),
+                                                        URLQueryItem(name: "provider", value: provider),
                                                         URLQueryItem(name: "metaData", value: metaData),
                                                         URLQueryItem(name: "locale", value: locale)]
 
                 } else {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "provider", value: provider),
                                                         URLQueryItem(name: "handle", value: email),
                                                         URLQueryItem(name: "locale", value: locale)]
                 }
             } else {
                 if let metaData = metaData {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "provider", value: provider),
                                                         URLQueryItem(name: "handle", value: email),
                                                         URLQueryItem(name: "metaData", value: metaData)]
                 } else {
                     requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                        URLQueryItem(name: "provider", value: provider),
                                                         URLQueryItem(name: "handle", value: email)]
                 }
             }
