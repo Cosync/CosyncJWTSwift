@@ -45,7 +45,7 @@ public class CosyncGoogleAuth: ObservableObject {
      
     
     
-    init(googleClientID:String){
+    public init(googleClientID:String){
         self.googleClientID = googleClientID
     }
     
