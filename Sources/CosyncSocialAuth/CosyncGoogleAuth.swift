@@ -49,7 +49,27 @@ public class CosyncGoogleAuth: ObservableObject {
         self.googleClientID = googleClientID
     }
     
-    func getUserData(){
+    public func signIn(){
+        clear()
+        guard let presentingViewController = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.rootViewController else {return}
+
+        let config = GIDConfiguration(clientID: self.googleClientID)
+        GIDSignIn.sharedInstance.configuration = config
+        GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController, completion: { user, error in
+          
+            if let err = error?.localizedDescription{
+                self.errorMessage = err
+            }
+            else if(GIDSignIn.sharedInstance.currentUser != nil){
+                self.getUserData()
+            }
+            else {
+                self.errorMessage = "Something went wrong"
+            }
+        })
+    }
+    
+    private func getUserData(){
         
         if(GIDSignIn.sharedInstance.currentUser != nil){
             
@@ -70,31 +90,10 @@ public class CosyncGoogleAuth: ObservableObject {
         }
     }
     
-    
-    func signIn(){
-        clear()
-        guard let presentingViewController = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.rootViewController else {return}
-
-        let config = GIDConfiguration(clientID: self.googleClientID)
-        GIDSignIn.sharedInstance.configuration = config
-        GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController, completion: { user, error in
-          
-            if let err = error?.localizedDescription{
-                self.errorMessage = err
-            }
-            else if(GIDSignIn.sharedInstance.currentUser != nil){
-                self.getUserData()
-            }
-            else {
-                self.errorMessage = "Something went wrong"
-            }
-        })
-   }
-    
-    func signOut(){
+    public func signOut(){
         GIDSignIn.sharedInstance.signOut()
         clear()
-   }
+    }
     
     func clear(){
         self.isLoggedIn = false
