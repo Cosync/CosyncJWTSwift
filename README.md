@@ -55,6 +55,10 @@ The **CosyncJWTError** class includes the following enumerations:
 - userNameDoesNotExist
 - accountIsNotVerify
 - invalidLocale
+- emailAccountExists
+- appleAccountExists
+- googleAccountExists
+- invalidToken
 - invalidPassword
 
 # Function API
@@ -420,6 +424,103 @@ If an error occurs in the call to the function, a CosyncJWTError exceptions will
 	}
 ```
 
+
+## socialLogin
+
+<img width="900" src="./images/applelogin.svg">
+
+The *sociallogin()* function is used to login into a user's account using a social login provider. Currently Cosync JWT supports both 'apple' and 'google' as social login providers. If the social login is successful it will return to the caller, the login credentials will be saved in member variables of the **CosyncJWTRest** shared object:
+
+* **jwt**: the JWT token of the logged in user
+* **accessToken**: the access token of the logged in user
+
+```
+	public func socialLogin(
+		_ token: String, 
+		provider: String
+        ) async throws -> Void
+```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+
+### Parameters
+
+**token** : String - this is the login token returned by the provider
+
+**provider** : String - this contains the social provider either 'apple' or 'google'
+
+### Example
+
+```
+	do {
+		try await CosyncJWTRest.shared.socialLogin(token, provider: "apple")
+	} catch let error as CosyncJWTError {
+		NSLog(@"social login error '%@'", error.message)
+	}
+```
+
+## socialSignup
+
+The *socialSignup()* function is used to signup a user with a CosyncJWT application using a social provider. 
+
+<img width="900" src="./images/applesignup.svg">
+
+This function will sign up a user to the CosyncJWT service using a social account `token``. Currently, the Cosync JWT system supports both Apple Id and Google Gmail social login protocols. This function receives the social token from the social login provider and a provider string that specifies the social provider (for instance, ‘apple’ or ‘google’).
+
+This function will fail if the metaData requirements are not met and return a 604.
+
+The **metaData** is structured JSON data that is passed to the CosyncJWT service at the time of signup. If the signup is successful and a new user is created, the **metaData** is saved in the metaData of the user. This mechanism allows a new user to pass information like signup coupon codes. Typically the social provider will provide information that can be used to create the metaData with such as the user’s first and last names, along with the user’s email for the **handle** parameter.
+
+If successful, this function will return the **jwt** and **access-token** for the newly signed up user. The **socialSignup** function will not succeed if a user email account has previously been established for the ’email’ provider or if an account with an alternative social provider already exists for the same email.
+
+The usual process for managing a social sign-in button (Apple or Google) involves initially attempting a **socialLogin**. If that fails due to the non-existence of the account, the next step is to fall back to a **socialSignup** call.
+
+This function can be passed an optional locale parameter, which specifies the user’s locale.
+
+```
+	public func signup(
+		_ token: String,
+		email: String, 
+		provider: String, 
+		metaData: String?,
+        locale: String? = nil) async throws -> Void
+```
+
+If an error occurs in the call to the function, a CosyncJWTError exceptions will be thrown.
+
+### Parameters
+
+**token** : String - this is the login token returned by the provider
+
+**provider** : String - this contains the social provider either 'apple' or 'google'
+
+**email** : String - this contains the user's email (Apple Id or Google Gmail account) 
+
+**metadata** : String - JSON representation of the metadata.
+
+**locale** : String - 2 letter **locale** for the user
+
+
+### Example
+
+```
+	let metaData = "{\"user_data\": {\"name\": {
+		\"first\": \"\(self.firstName)\", 
+		\"last\": \"\(self.lastName)\"}}}"
+
+	do {
+		try await CosyncJWTRest.shared.signupSocial(token, 
+					email: self.email, 
+					locale: "EN",
+					password: self.password, 
+					metaData: metaData)
+	} catch let error as CosyncJWTError {
+		NSLog(@"social signup error '%@'", error.message)
+	}
+```
+
+
 ## checkPassword
 
 The *checkPassword()* function is used by the client application to check whether a password conforms to the *password filtering* parameters set for the application in the Cosync Portal. When using CosyncJWT, a developer can require that user for an application meet specific password requirements, which include:
@@ -456,6 +557,7 @@ The *password filtering* parameters are set by the developer in the Cosync Porta
 The *getUser()* function is used by the client application to get information about the currently logged in user to CosyncJWT. The *getUser()* function will save user information inside member variables of the **CosyncJWTRest.shared** object. These member variables include the following information:
 
 * **handle** : String - email handle of user
+* **loginProvider** : String - login provider for user ('email','apple', or 'google')
 * **userName** : String - user name of user
 * **twoFactorPhoneVerification** : Bool - whether phone 2FA is enabled for user
 * **twoFactorGoogleVerification** : Bool - whether google 2FA is enabled for user
@@ -489,6 +591,11 @@ None
 The *getApplication()* function is used by the client application to get information about the application within CosyncJWT. The *getApplication()* function will save user information inside member variables of the **CosyncJWTRest.shared** object. These member variables include the following information:
 
 * **appName** : String - application name as stored in CosyncJWT
+* **signupFlow** : String - signup flow ('code','link', or 'none')
+* **anonymousLoginEnabled** : Bool - true if anonymous login enabled
+* **userNamesEnabled** : Bool - true if user names are enabled
+* **googleLoginEnabled** : Bool - true if google login provider enabled
+* **appleLoginEnabled** : Bool - true if apple login provider enabled
 * **twoFactorVerification** : String - 2FA type 'phone', 'google', or 'none'
 * **passwordFilter** : Bool - whether password filtering is turned on
 * **passwordMinLength** : Int - minimum password length
@@ -497,6 +604,7 @@ The *getApplication()* function is used by the client application to get informa
 * **passwordMinDigit** : Int - minimum number of digits
 * **passwordMinSpecial** : Int - minimum number of special characters
 * **appData** : Date - last login date for user
+* **locales** : Array of Strings - list of two letter locales supported
 
 ```
 	public func getApplication() async throws -> Void
