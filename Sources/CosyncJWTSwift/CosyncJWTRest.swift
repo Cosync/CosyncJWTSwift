@@ -76,8 +76,7 @@ public class CosyncJWTRest {
     public var accessToken: String?
     public var loginToken: String?
 
-    // complete signup credentials
-    public var signedUserToken: String?
+    
     
     // Logged in user data
     public var status: String?                      // 'active', or 'suspend'
@@ -427,7 +426,7 @@ public class CosyncJWTRest {
         self.phoneVerified = false
         self.phone = nil 
         self.loginToken = nil
-        self.signedUserToken = nil
+         
         self.metaData = nil
         self.lastLogin = nil
         self.googleSecretKey = nil
@@ -541,7 +540,7 @@ public class CosyncJWTRest {
         
         self.jwt = nil
         self.accessToken = nil
-        self.signedUserToken = nil
+         
 
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -609,12 +608,11 @@ public class CosyncJWTRest {
                 }
 
                 if let jwt = json["jwt"] as? String,
-                   let accessToken = json["access-token"] as? String,
-                   let signedUserToken = json["signed-user-token"] as? String {
+                   let accessToken = json["access-token"] as? String {
                     
                     self.jwt = jwt
                     self.accessToken = accessToken
-                    self.signedUserToken = signedUserToken
+                    
                 } else {
                     throw CosyncJWTError.internalServerError
                 }
@@ -708,7 +706,6 @@ public class CosyncJWTRest {
     @MainActor public func completeSignup(_ handle: String, code: String) async throws -> Void {
         self.jwt = nil
         self.accessToken = nil
-        self.signedUserToken = nil
 
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
@@ -749,12 +746,11 @@ public class CosyncJWTRest {
             }
 
             if let jwt = json["jwt"] as? String,
-               let accessToken = json["access-token"] as? String,
-               let signedUserToken = json["signed-user-token"] as? String {
+               let accessToken = json["access-token"] as? String{
                 
                 self.jwt = jwt
                 self.accessToken = accessToken
-                self.signedUserToken = signedUserToken
+                
             } else {
                 throw CosyncJWTError.internalServerError
             }
