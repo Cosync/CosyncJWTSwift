@@ -104,6 +104,9 @@ public class CosyncJWTRest {
     public var googleLoginEnabled:Bool?
     public var appleLoginEnabled:Bool?
     public var anonymousLoginEnabled: Bool?
+    public var signupEnabled: Bool?
+    public var invitationEnabled: Bool?
+    
     var passwordFilter: Bool?
     var passwordMinLength: Int?
     var passwordMinUpper: Int?
@@ -446,6 +449,10 @@ public class CosyncJWTRest {
 
         try await CosyncJWTRest.shared.getApplication()
 
+        guard self.signupEnabled == true else {
+            throw CosyncJWTError.appSignupNotSupported
+        }
+        
         if self.checkPassword(password) {
             
             let config = URLSessionConfiguration.default
@@ -549,9 +556,7 @@ public class CosyncJWTRest {
         guard let cosyncRestAddress = self.cosyncRestAddress else {
             throw CosyncJWTError.cosyncJWTConfiguration
         }
-
-        try await CosyncJWTRest.shared.getApplication()
-
+        
         if self.checkPassword(password) {
             
             let config = URLSessionConfiguration.default
@@ -1279,6 +1284,12 @@ public class CosyncJWTRest {
             if let name = json["name"] as? String {
                 self.appName = name
             }
+            if let signupEnabled = json["signupEnabled"] as? Bool {
+                self.signupEnabled = signupEnabled
+            }
+            if let invitationEnabled = json["invitationEnabled"] as? Bool {
+                self.invitationEnabled = invitationEnabled
+            }
             if let signFlow = json["signupFlow"] as? String {
                 self.signupFlow = signFlow
             }
@@ -1349,6 +1360,12 @@ public class CosyncJWTRest {
         
         guard let accessToken = self.accessToken else {
             throw CosyncJWTError.internalServerError
+        }
+        
+        try await CosyncJWTRest.shared.getApplication()
+
+        guard self.invitationEnabled == true else {
+            throw CosyncJWTError.appInviteNotSupported
         }
 
         let config = URLSessionConfiguration.default
@@ -1657,7 +1674,7 @@ public class CosyncJWTRest {
         self.jwt = nil
         self.accessToken = nil
         self.loginToken = nil
-
+        
         guard let appToken = self.appToken else {
             throw CosyncJWTError.cosyncJWTConfiguration
         }
@@ -1667,6 +1684,17 @@ public class CosyncJWTRest {
         }
         
         try await CosyncJWTRest.shared.getApplication()
+        
+        if provider == "google"{
+            guard self.googleLoginEnabled == true else {
+                throw CosyncJWTError.googleLoginNotSupported
+            }
+        }
+        else if provider == "apple" {
+            guard self.appleLoginEnabled == true else {
+                throw CosyncJWTError.appleLoginNotSupported
+            }
+        }
         
         let config = URLSessionConfiguration.default
 
@@ -1730,11 +1758,20 @@ public class CosyncJWTRest {
 
         try await CosyncJWTRest.shared.getApplication()
 
+        if provider == "google"{
+            guard self.googleLoginEnabled == true else {
+                throw CosyncJWTError.googleLoginNotSupported
+            }
+        }
+        else if provider == "apple" {
+            guard self.appleLoginEnabled == true else {
+                throw CosyncJWTError.appleLoginNotSupported
+            }
+        }
         
-            
-            let config = URLSessionConfiguration.default
+        let config = URLSessionConfiguration.default
 
-            let session = URLSession(configuration: config)
+        let session = URLSession(configuration: config)
             
         let url = URL(string: "\(cosyncRestAddress)/\(CosyncJWTRest.socialSignupPath)")!
             var urlRequest = URLRequest(url: url)
